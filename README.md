@@ -1,7 +1,7 @@
 # Go Transition Plan
 
-**Goal:** Successfully transition from Python to Go for professional development, aiming for a Middle Go Developer position.
-**Schedule:** Approx. 2 hours +/- 1 hour on weekdays. Weekends dedicated to Rust pet projects.
+**Goal:** Successfully transition from Python to Go for professional development, aiming for a Middle Go Developer position.  
+**Schedule:** Approx. 2 hours +/- 1 hour on weekdays. Weekends dedicated to Rust pet projects.  
 **Status:** Not Started
 
 ---
@@ -116,11 +116,11 @@
 
 ## Notes and Reminders
 
-- **Consistency > Intensity:** Try to stick to the schedule, but avoid burnout.
-- **Don't Burn Out:** Take breaks when needed.
-- **Rust:** Remember to allocate time for Rust on weekends.
-- **Flexibility:** This plan is a guideline. Adjust based on your feelings and progress.
-- **Read Code:** Study code from the standard library and popular Go projects.
-- **Community:** Don't hesitate to search Stack Overflow, Go docs, forums for answers.
+- **Consistency > Intensity:** Try to stick to the schedule, but avoid burnout.  
+- **Don't Burn Out:** Take breaks when needed.  
+- **Rust:** Remember to allocate time for Rust on weekends.  
+- **Flexibility:** This plan is a guideline. Adjust based on your feelings and progress.  
+- **Read Code:** Study code from the standard library and popular Go projects.  
+- **Community:** Don't hesitate to search Stack Overflow, Go docs, forums for answers.  
 
 ---
