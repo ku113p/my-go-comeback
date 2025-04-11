@@ -1,4 +1,4 @@
-package exercise3maps
+package exercise3
 
 import (
 	"reflect"

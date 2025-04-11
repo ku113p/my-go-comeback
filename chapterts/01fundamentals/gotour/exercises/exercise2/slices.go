@@ -1,6 +1,6 @@
-package exercise2slices
+package exercise2
 
-func Pic(dx, dy int) [][]uint8 {
+func Pic(dx, dy int, pixelFunc func(int, int) uint8) [][]uint8 {
 	p := make([][]uint8, dx)
 
 	for i := range p {
@@ -9,21 +9,21 @@ func Pic(dx, dy int) [][]uint8 {
 
 	for i := 0; i < dx; i++ {
 		for j := 0; j < dy; j++ {
-			p[i][j] = f2(i, j)
+			p[i][j] = pixelFunc(i, j)
 		}
 	}
 
 	return p
 }
 
-func f0(x, y int) uint8 {
+func F0(x, y int) uint8 {
 	return uint8((x + y) / 2)
 }
 
-func f1(x, y int) uint8 {
+func F1(x, y int) uint8 {
 	return uint8(x * y)
 }
 
-func f2(x, y int) uint8 {
+func F2(x, y int) uint8 {
 	return uint8(x ^ y)
 }
