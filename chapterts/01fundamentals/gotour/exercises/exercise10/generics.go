@@ -1,7 +1,5 @@
 package exercise10
 
-import "fmt"
-
 type List[T any] struct {
 	next *List[T]
 	val  T
@@ -22,13 +20,4 @@ func NewList[T any](s []T) *List[T] {
 	}
 
 	return head
-}
-
-func main() {
-	item := NewList([]int{0, 1, 2, 3, 4, 5, 6})
-
-	for i := 0; item.next != nil; i++ {
-		fmt.Println(i, item)
-		item = item.next
-	}
 }
