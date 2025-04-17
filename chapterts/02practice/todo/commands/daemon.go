@@ -116,11 +116,7 @@ func makeOperation(src string, s *db.Storage) error {
 		o = &n
 	}
 
-	if err := o.make(s); err != nil {
-		return err
-	}
-
-	return s.Save()
+	return o.make(s)
 }
 
 type Operation interface {
