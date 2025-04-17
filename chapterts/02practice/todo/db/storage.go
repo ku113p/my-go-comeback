@@ -58,23 +58,6 @@ func (s *Storage) Save() error {
 	return saveDataToFs(s.data)
 }
 
-func (s *Storage) MonitorOperationsEvery10Seconds(src string) {
-	s.startMonitorOperations(10 * time.Second)
-}
-
-func (s *Storage) startMonitorOperations(period time.Duration) {
-	ticker := time.NewTicker(period)
-
-	go func() {
-		for {
-			<-ticker.C
-
-			msg := fmt.Sprintf("operations applied: %v", 0)
-			logger.Info(msg)
-		}
-	}()
-}
-
 func (s *Storage) ListTasks() []*Task {
 	to_defer := s.borrowSpace()
 	defer to_defer()

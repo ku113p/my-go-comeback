@@ -9,7 +9,7 @@ A simple command-line TODO application written in Go, part of a learning/practic
 - Get details of a task by ID
 - Mark tasks as done
 - Delete tasks
-- Support for daemon operations (via directory input)
+- Support for **file-based automation via a daemon process**
 
 ## 🛠 Usage
 
@@ -23,7 +23,7 @@ You can use the following flags:
 
 ```
   -daemon string
-        Operations source dir for daemon
+        Path to a directory to watch for file-based task operations
   -del string
         Delete task by ID
   -done string
@@ -35,6 +35,58 @@ You can use the following flags:
   -new string
         Create a new task by "<name>|<description>"
 ```
+
+## 📦 Daemon Mode (`-daemon`)
+
+Daemon mode allows automation of task operations using files. When the `-daemon` flag is used with a directory path, the CLI will:
+
+1. **Watch the specified directory** every 10 seconds.
+2. **Process files** in the directory with filenames starting with one of these prefixes:
+   - `new_`: Create a new task.
+   - `mark_`: Mark a task as done.
+   - `delete_`: Delete a task.
+3. **Expect each file** to contain JSON payloads describing the operation.
+4. **Perform the operation**, save changes, and then delete the file.
+
+### 📂 Example Usage
+
+Run the daemon:
+
+```bash
+go run . -daemon ./ops
+```
+
+Then create files in the `./ops` directory:
+
+#### ✅ `new_<any>.json`
+
+```json
+{
+  "time": "2025-04-18T10:30:00Z",
+  "name": "Read book",
+  "desc": "Read 20 pages of 'Go in Action'"
+}
+```
+
+#### ✅ `mark_<any>.json`
+
+```json
+{
+  "id": "task-id-here"
+}
+```
+
+#### ✅ `delete_<any>.json`
+
+```json
+{
+  "id": "task-id-here"
+}
+```
+
+The daemon will detect the files, process them accordingly, and delete them afterward.
+
+> This feature is great for scripting, automation, or integration with other tools.
 
 ## 📌 Examples
 
@@ -79,9 +131,7 @@ chapterts/02practice/todo
 ## 🧠 Notes
 
 - Tasks are stored locally.
-- The `-daemon` flag is for optional directory-based task operations—implementation-dependent.
-
+- Daemon mode is optional but useful for automating task input using external processes or integrations.
 
 ## TODO
-- [ ] impl daemon operations from files  
 - [ ] tests  
