@@ -83,5 +83,5 @@ chapterts/02practice/todo
 
 
 ## TODO
-[ ] impl daemon operations from files
-[ ] tests
+- [ ] impl daemon operations from files  
+- [ ] tests  

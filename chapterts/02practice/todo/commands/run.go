@@ -34,9 +34,7 @@ func Run() {
 	case fDaemonSrc != "":
 		daemon(fDaemonSrc)
 	case fList:
-		for i, t := range listTasks() {
-			logger.Info("task", "ind", i, "task", t)
-		}
+		logger.Info("task", "tasks", listTasks())
 	case fGet != "":
 		if t, ok := getTask(fGet); ok {
 			logger.Info("got task", "task", t)
