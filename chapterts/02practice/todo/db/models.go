@@ -12,7 +12,7 @@ import (
 const storageFp = "./storage.json"
 
 type Task struct {
-	Id          uuid.UUID `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Time        time.Time `json:"time"`
 	Done        bool      `json:"done"`
 	Name        string    `json:"name"`
@@ -20,22 +20,24 @@ type Task struct {
 }
 
 type TaskBuilder struct {
+	genId       func() uuid.UUID
 	id          uuid.UUID
 	time        time.Time
 	name        string
 	description string
 }
 
-func NewTaskBuilder() *TaskBuilder {
-	return &TaskBuilder{}
+func NewTaskBuilder(genId func() uuid.UUID) *TaskBuilder {
+	return &TaskBuilder{genId: genId}
 }
 
-func (t *TaskBuilder) WithSomeId() *TaskBuilder {
+func UuidIdGenerator() uuid.UUID {
 	id, err := uuid.NewV7()
 	if err != nil {
-		panic("No way! It's happened.")
+		logger.Error("Failed gen v7 Uuid", "error", err)
+		return uuid.New()
 	}
-	return t.withId(id)
+	return id
 }
 
 func (t *TaskBuilder) withId(id uuid.UUID) *TaskBuilder {
@@ -59,8 +61,10 @@ func (t *TaskBuilder) WithDescription(d string) *TaskBuilder {
 }
 
 func (t *TaskBuilder) Build() *Task {
+	t.withId(t.genId())
+
 	return &Task{
-		Id:          t.id,
+		ID:          t.id,
 		Time:        t.time,
 		Name:        t.name,
 		Description: t.description,

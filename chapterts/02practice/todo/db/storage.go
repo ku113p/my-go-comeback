@@ -87,7 +87,7 @@ func (s *Storage) AddTask(t *Task) error {
 	to_defer := s.borrowSpace()
 	defer to_defer()
 
-	tid := t.Id.String()
+	tid := t.ID.String()
 	if _, exists := s.data[tid]; exists {
 		return fmt.Errorf("task with id '%v' already exists", tid)
 	}

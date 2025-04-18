@@ -84,7 +84,7 @@ func makeOperation(src string, s *db.Storage) error {
 
 	operation := strings.SplitN(filepath.Base(src), "_", 2)[0]
 	if !allowedOp[operation] {
-		return fmt.Errorf("Unknonw operation %v", operation)
+		return fmt.Errorf("unknonw operation %v", operation)
 	}
 
 	jsonFile, err := os.Open(src)
@@ -151,6 +151,6 @@ type newOperation struct {
 
 func (c *newOperation) make(s *db.Storage) error {
 	return s.AddTask(
-		db.NewTaskBuilder().WithSomeId().WithName(c.Name).WithDescription(c.Description).WithTime(c.Time).Build(),
+		db.NewTaskBuilder(db.UuidIdGenerator).WithName(c.Name).WithDescription(c.Description).WithTime(c.Time).Build(),
 	)
 }
