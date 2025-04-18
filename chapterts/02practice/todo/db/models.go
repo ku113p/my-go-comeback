@@ -7,9 +7,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spf13/afero"
 )
 
 const storageFp = "./storage.json"
+
+var AppFs afero.Fs
+
+func init() {
+	AppFs = afero.NewOsFs()
+}
 
 type Task struct {
 	ID          uuid.UUID `json:"id"`
@@ -72,7 +79,7 @@ func (t *TaskBuilder) Build() *Task {
 }
 
 func GetDataFromFs() (map[string]*Task, error) {
-	jsonFile, err := os.Open(storageFp)
+	jsonFile, err := AppFs.Open(storageFp)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +102,7 @@ func saveDataToFs(d map[string]*Task) error {
 		return err
 	}
 
-	jsonFile, err := os.OpenFile(storageFp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	jsonFile, err := AppFs.OpenFile(storageFp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
