@@ -12,10 +12,10 @@ import (
 
 const storageFp = "./storage.json"
 
-var AppFs afero.Fs
+var appFs afero.Fs
 
 func init() {
-	AppFs = afero.NewOsFs()
+	appFs = afero.NewOsFs()
 }
 
 type Task struct {
@@ -78,8 +78,8 @@ func (t *TaskBuilder) Build() *Task {
 	}
 }
 
-func GetDataFromFs() (map[string]*Task, error) {
-	jsonFile, err := AppFs.Open(storageFp)
+func getDataFromFs() (map[string]*Task, error) {
+	jsonFile, err := appFs.Open(storageFp)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func saveDataToFs(d map[string]*Task) error {
 		return err
 	}
 
-	jsonFile, err := AppFs.OpenFile(storageFp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	jsonFile, err := appFs.OpenFile(storageFp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}

@@ -100,9 +100,9 @@ func TestBuilder_Build(t *testing.T) {
 
 func setupMockFS() (afero.Fs, func()) {
 	fs := afero.NewMemMapFs()
-	AppFs = fs
+	appFs = fs
 	return fs, func() {
-		AppFs = afero.NewOsFs()
+		appFs = afero.NewOsFs()
 	}
 }
 
@@ -121,7 +121,7 @@ func TestGetDataFromFs_Success(t *testing.T) {
 	jsonData, _ := json.Marshal(testTasksData)
 	afero.WriteFile(fs, storageFp, jsonData, 0644)
 
-	result, err := GetDataFromFs()
+	result, err := getDataFromFs()
 	if err != nil {
 		t.Errorf("GetDataFromFs returned an Error: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestGetDataFromFs_FileNotExist(t *testing.T) {
 	_, teardown := setupMockFS()
 	defer teardown()
 
-	data, err := GetDataFromFs()
+	data, err := getDataFromFs()
 
 	if err != nil && !os.IsNotExist(err) {
 		t.Errorf("GetDataFromFs returned an unexpected error for a non-existent file: %v", err)
@@ -151,7 +151,7 @@ func TestGetDataFromFs_InvalidJSON(t *testing.T) {
 
 	afero.WriteFile(fs, storageFp, []byte("this is not valid json"), 0644)
 
-	data, err := GetDataFromFs()
+	data, err := getDataFromFs()
 
 	if err == nil {
 		t.Errorf("GetDataFromFs should have returned an error for invalid JSON")

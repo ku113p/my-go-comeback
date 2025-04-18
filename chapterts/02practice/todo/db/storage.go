@@ -16,7 +16,7 @@ type Storage struct {
 }
 
 func GetStorage() *Storage {
-	data, err := GetDataFromFs()
+	data, err := getDataFromFs()
 	if err != nil {
 		logger.Info("Storage not loaded from file system. New one will be created.", "error", err)
 	}
