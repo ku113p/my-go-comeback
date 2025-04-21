@@ -151,6 +151,10 @@ type newOperation struct {
 
 func (c *newOperation) make(s *db.Storage) error {
 	return s.AddTask(
-		db.NewTaskBuilder(db.UuidIdGenerator).WithName(c.Name).WithDescription(c.Description).WithTime(c.Time).Build(),
+		db.NewTaskBuilder(db.UuidIdGenerator).
+			WithName(c.Name).
+			WithDescription(c.Description).
+			WithTime(c.Time).
+			Build(),
 	)
 }

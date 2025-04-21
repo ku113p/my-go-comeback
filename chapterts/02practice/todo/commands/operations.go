@@ -37,7 +37,10 @@ func markDoneTask(id string) error {
 }
 
 func newTask(name, desc string) (*uuid.UUID, error) {
-	t := db.NewTaskBuilder(db.UuidIdGenerator).WithName(name).WithDescription(desc).Build()
+	t := db.NewTaskBuilder(db.UuidIdGenerator).
+		WithName(name).
+		WithDescription(desc).
+		Build()
 
 	s := db.GetStorage()
 	if err := s.AddTask(t); err != nil {

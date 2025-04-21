@@ -90,7 +90,11 @@ func TestBuilder_Build(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			result := NewTaskBuilder(testIdGenerator).WithName(tt.name).WithDescription(tt.description).WithTime(tt.time).Build()
+			result := NewTaskBuilder(testIdGenerator).
+				WithName(tt.name).
+				WithDescription(tt.description).
+				WithTime(tt.time).
+				Build()
 			if !reflect.DeepEqual(tt.expected, *result) {
 				t.Errorf("expected %+v, got %+v", tt.expected, result)
 			}
