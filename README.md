@@ -30,8 +30,8 @@
     - [x] `errors.New`, `fmt.Errorf`.
 - [x] **Modules and Dependencies:**
     - [x] `go mod init`, `go.mod`, `go.sum`.
-    - [ ] `go get`, `go mod tidy`.
-    - [ ] Create a test project with 1-2 external dependencies.
+    - [x] `go get`, `go mod tidy`.
+    - [x] Create a test project with 1-2 external dependencies.
 - [x] **Concurrency (Basics):**
     - [x] Starting goroutines (`go func()`).
     - [x] Channels (creation, sending, receiving, buffering).
@@ -53,11 +53,11 @@
 *Goal: Apply knowledge by building typical backend applications.*
 
 - **Project 1: CLI Utility (Simple)**
-    - [ ] Define functionality (e.g., TODO list, file parser).
-    - [ ] Implement core logic.
-    - [ ] Handle command-line arguments (`flag` package).
-    - [ ] Read/write files (`os`, `io`, `encoding/json` or `encoding/csv`).
-    - [ ] Write basic tests.
+    - [x] Define functionality (e.g., TODO list, file parser).
+    - [x] Implement core logic.
+    - [x] Handle command-line arguments (`flag` package).
+    - [x] Read/write files (`os`, `io`, `encoding/json` or `encoding/csv`).
+    - [x] Write basic tests.
 - **Project 2: Simple REST API (In-memory) (Medium)**
     - [ ] Choose an entity (e.g., books, notes).
     - [ ] Implement CRUD handlers (`net/http` or Gin/Echo).
