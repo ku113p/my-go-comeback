@@ -59,10 +59,10 @@
     - [x] Read/write files (`os`, `io`, `encoding/json` or `encoding/csv`).
     - [x] Write basic tests.
 - **Project 2: Simple REST API (In-memory) (Medium)**
-    - [ ] Choose an entity (e.g., books, notes).
-    - [ ] Implement CRUD handlers (`net/http` or Gin/Echo).
-    - [ ] Handle JSON requests/responses.
-    - [ ] Basic project structure (e.g., handlers, models).
+    - [x] Choose an entity (e.g., books, notes).
+    - [x] Implement CRUD handlers (`net/http` or Gin/Echo).
+    - [x] Handle JSON requests/responses.
+    - [x] Basic project structure (e.g., handlers, models).
     - [ ] Write tests for handlers (using `net/http/httptest`).
 - **Project 3: API with Database (Medium+)**
     - [ ] Choose a DB (e.g., PostgreSQL, SQLite).
