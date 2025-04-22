@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 )
 
@@ -18,6 +19,9 @@ func authorFromBytes(r io.Reader) (ObjectsModel, error) {
 	var author Author
 	if err := json.NewDecoder(r).Decode(&author); err != nil {
 		return nil, err
+	}
+	if author.Username == "" {
+		return nil, fmt.Errorf("invalid username")
 	}
 	return &author, nil
 }

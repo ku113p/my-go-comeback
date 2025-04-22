@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
@@ -20,6 +21,9 @@ func noteFromBytes(r io.Reader) (ObjectsModel, error) {
 	var note Note
 	if err := json.NewDecoder(r).Decode(&note); err != nil {
 		return nil, err
+	}
+	if note.Name == "" {
+		return nil, fmt.Errorf("invalid name")
 	}
 	return &note, nil
 }
