@@ -2,15 +2,15 @@ package models
 
 type Table struct {
 	name    ModelName
-	storage map[ObjectID]Model
+	storage map[ObjectID]ObjectsModel
 }
 
-func NewTable(name ModelName) *Table {
-	return &Table{name: name, storage: make(map[ObjectID]Model)}
+func newTable(name ModelName) *Table {
+	return &Table{name: name, storage: make(map[ObjectID]ObjectsModel)}
 }
 
-func (t Table) List() ([]Model, error) {
-	result := make([]Model, 0)
+func (t Table) List() ([]ObjectsModel, error) {
+	result := make([]ObjectsModel, 0)
 
 	for _, m := range t.storage {
 		result = append(result, m)
@@ -19,7 +19,7 @@ func (t Table) List() ([]Model, error) {
 	return result, nil
 }
 
-func (t Table) Get(id ObjectID) (Model, error) {
+func (t Table) Get(id ObjectID) (ObjectsModel, error) {
 	obj, ok := t.storage[id]
 	if !ok {
 		return nil, NewNotExistsError(t.name, id)
@@ -38,7 +38,7 @@ func (t Table) Delete(id ObjectID) error {
 	return nil
 }
 
-func (t Table) Update(obj Model) error {
+func (t Table) Update(obj ObjectsModel) error {
 	_, ok := t.storage[obj.getID()]
 	if !ok {
 		return NewNotExistsError(t.name, obj.getID())
@@ -49,7 +49,7 @@ func (t Table) Update(obj Model) error {
 	return nil
 }
 
-func (t Table) Create(obj Model) error {
+func (t Table) Create(obj ObjectsModel) error {
 	_, ok := t.storage[obj.getID()]
 	if !ok {
 		t.storage[obj.getID()] = obj

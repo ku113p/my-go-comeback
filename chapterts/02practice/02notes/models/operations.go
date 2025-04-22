@@ -9,25 +9,25 @@ func NewRepositoryOperation(name ModelName, repository *ModelsRepositry) *Reposi
 	return &RepositoryOperation{name, repository}
 }
 
-func (op *RepositoryOperation) table() Storage {
+func (op *RepositoryOperation) table() objectsStorage {
 	return op.repository.db[op.Name]
 }
 
-func (op *RepositoryOperation) List() ([]Model, error) {
+func (op *RepositoryOperation) List() ([]ObjectsModel, error) {
 	return op.table().List()
 }
 
-func (op *RepositoryOperation) Create(m Model) error {
+func (op *RepositoryOperation) Create(m ObjectsModel) error {
 	id := op.repository.idGenerator.Generate()
 	m.SetID(&id)
 	return op.table().Create(m)
 }
 
-func (op *RepositoryOperation) Get(id ObjectID) (Model, error) {
+func (op *RepositoryOperation) Get(id ObjectID) (ObjectsModel, error) {
 	return op.table().Get(id)
 }
 
-func (op *RepositoryOperation) Update(m Model) error {
+func (op *RepositoryOperation) Update(m ObjectsModel) error {
 	return op.table().Update(m)
 }
 

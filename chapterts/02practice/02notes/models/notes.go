@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const NoteModelName ModelName = "notes"
+const noteModelName ModelName = "notes"
 
 type Note struct {
 	ID          *ObjectID  `json:"id"`
@@ -18,7 +18,7 @@ type Note struct {
 	AuthorId    *uuid.UUID `json:"author_id"`
 }
 
-func noteFromBytes(r io.Reader) (Model, error) {
+func noteFromBytes(r io.Reader) (ObjectsModel, error) {
 	var note *Note
 	if err := json.NewDecoder(r).Decode(&note); err != nil {
 		return nil, err

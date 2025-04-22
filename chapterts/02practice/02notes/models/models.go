@@ -33,30 +33,30 @@ type IDGenerator interface {
 type ModelName string
 
 type ModelsRepositry struct {
-	db          map[ModelName]Storage
+	db          map[ModelName]objectsStorage
 	idGenerator IDGenerator
 }
 
-type Storage interface {
-	List() ([]Model, error)
-	Create(Model) error
-	Get(ObjectID) (Model, error)
-	Update(Model) error
+type objectsStorage interface {
+	List() ([]ObjectsModel, error)
+	Create(ObjectsModel) error
+	Get(ObjectID) (ObjectsModel, error)
+	Update(ObjectsModel) error
 	Delete(ObjectID) error
 }
 
-type Model interface {
+type ObjectsModel interface {
 	getID() ObjectID
 	SetID(*ObjectID)
 }
 
-var ModelsToRegister = []ModelName{NoteModelName, AuthorModelName}
+var ModelsToRegister = []ModelName{noteModelName, authorModelName}
 
 func NewModelsRepository(idGenerator IDGenerator, models []ModelName) *ModelsRepositry {
-	db := make(map[ModelName]Storage, 0)
+	db := make(map[ModelName]objectsStorage, 0)
 
 	for _, m := range models {
-		db[m] = NewTable(m)
+		db[m] = newTable(m)
 	}
 
 	return &ModelsRepositry{
@@ -79,7 +79,7 @@ func (u uuidIdGenerator) Generate() ObjectID {
 	return ObjectID(id)
 }
 
-var ModelParsers = map[ModelName]func(io.Reader) (Model, error){
-	NoteModelName:   noteFromBytes,
-	AuthorModelName: authorFromBytes,
+var ModelParsers = map[ModelName]func(io.Reader) (ObjectsModel, error){
+	noteModelName:   noteFromBytes,
+	authorModelName: authorFromBytes,
 }

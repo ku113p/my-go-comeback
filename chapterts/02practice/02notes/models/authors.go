@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-const AuthorModelName ModelName = "authors"
+const authorModelName ModelName = "authors"
 
 type Author struct {
 	ID         *ObjectID `json:"id"`
@@ -14,7 +14,7 @@ type Author struct {
 	Secondname *string   `json:"secondname"`
 }
 
-func authorFromBytes(r io.Reader) (Model, error) {
+func authorFromBytes(r io.Reader) (ObjectsModel, error) {
 	var author *Author
 	if err := json.NewDecoder(r).Decode(author); err != nil {
 		return nil, err
