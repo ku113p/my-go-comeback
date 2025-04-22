@@ -22,19 +22,19 @@ The following endpoints are available:
 
 ### Notes
 
--   `GET /notes`: Lists all notes.
--   `POST /notes`: Creates a new note. The request body should be a JSON object representing the note.
--   `GET /notes/{id}`: Retrieves a specific note by its ID (UUID).
--   `PUT /notes/{id}`: Updates an existing note. The request body should be a JSON object representing the updated note.
--   `DELETE /notes/{id}`: Deletes a specific note by its ID (UUID).
+-   `GET /note`: Lists all notes.
+-   `POST /note`: Creates a new note. The request body should be a JSON object representing the note.
+-   `GET /note/{id}`: Retrieves a specific note by its ID (UUID).
+-   `PUT /note/{id}`: Updates an existing note. The request body should be a JSON object representing the updated note.
+-   `DELETE /note/{id}`: Deletes a specific note by its ID (UUID).
 
 ### Authors
 
--   `GET /authors`: Lists all authors.
--   `POST /authors`: Creates a new author. The request body should be a JSON object representing the author.
--   `GET /authors/{id}`: Retrieves a specific author by their ID (UUID).
--   `PUT /authors/{id}`: Updates an existing author. The request body should be a JSON object representing the updated author.
--   `DELETE /authors/{id}`: Deletes a specific author by their ID (UUID).
+-   `GET /author`: Lists all authors.
+-   `POST /author`: Creates a new author. The request body should be a JSON object representing the author.
+-   `GET /author/{id}`: Retrieves a specific author by their ID (UUID).
+-   `PUT /author/{id}`: Updates an existing author. The request body should be a JSON object representing the updated author.
+-   `DELETE /author/{id}`: Deletes a specific author by their ID (UUID).
 
 **Path Parameter:**
 
@@ -62,13 +62,13 @@ The following endpoints are available:
 ### Get all notes
 
 ```bash
-curl [http://127.0.0.1:8090/notes](http://127.0.0.1:8090/notes)
+curl http://127.0.0.1:8090/note
 ```
 
 ### Create a new note
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"name": "My First Note", "description": "This is a test note.", "author_id": "your-author-uuid"}' [http://127.0.0.1:8090/notes](http://127.0.0.1:8090/notes)
+curl -X POST -H "Content-Type: application/json" -d '{"name": "My First Note", "description": "This is a test note.", "author_id": "your-author-uuid"}' http://127.0.0.1:8090/note
 ```
 
 Replace `"your-author-uuid"` with an actual author ID.
@@ -76,7 +76,7 @@ Replace `"your-author-uuid"` with an actual author ID.
 ### Get a specific author
 
 ```bash
-curl [http://127.0.0.1:8090/authors/your-author-uuid](http://127.0.0.1:8090/authors/your-author-uuid)
+curl http://127.0.0.1:8090/author/your-author-uuid
 ```
 
 Replace `"your-author-uuid"` with the ID of the author you want to retrieve.
