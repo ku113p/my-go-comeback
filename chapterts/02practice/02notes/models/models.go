@@ -26,6 +26,10 @@ func (id *ObjectID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (id *ObjectID) String() string {
+	return uuid.UUID(*id).String()
+}
+
 type IDGenerator interface {
 	Generate() ObjectID
 }
@@ -48,6 +52,7 @@ type objectsStorage interface {
 type ObjectsModel interface {
 	getID() ObjectID
 	SetID(*ObjectID)
+	setDefaults()
 }
 
 var ModelsToRegister = []ModelName{noteModelName, authorModelName}

@@ -50,6 +50,8 @@ func (t Table) Update(obj ObjectsModel) error {
 }
 
 func (t Table) Create(obj ObjectsModel) error {
+	obj.setDefaults()
+
 	_, ok := t.storage[obj.getID()]
 	if !ok {
 		t.storage[obj.getID()] = obj

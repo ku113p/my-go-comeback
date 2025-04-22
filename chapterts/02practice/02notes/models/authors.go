@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-const authorModelName ModelName = "authors"
+const authorModelName ModelName = "author"
 
 type Author struct {
 	ID         *ObjectID `json:"id"`
@@ -15,11 +15,11 @@ type Author struct {
 }
 
 func authorFromBytes(r io.Reader) (ObjectsModel, error) {
-	var author *Author
-	if err := json.NewDecoder(r).Decode(author); err != nil {
+	var author Author
+	if err := json.NewDecoder(r).Decode(&author); err != nil {
 		return nil, err
 	}
-	return author, nil
+	return &author, nil
 }
 
 func (a *Author) getID() ObjectID {
@@ -29,3 +29,5 @@ func (a *Author) getID() ObjectID {
 func (a *Author) SetID(id *ObjectID) {
 	a.ID = id
 }
+
+func (a *Author) setDefaults() {}
