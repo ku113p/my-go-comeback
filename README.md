@@ -63,7 +63,7 @@
     - [x] Implement CRUD handlers (`net/http` or Gin/Echo).
     - [x] Handle JSON requests/responses.
     - [x] Basic project structure (e.g., handlers, models).
-    - [ ] Write tests for handlers (using `net/http/httptest`).
+    - [x] Write tests for handlers (using `net/http/httptest`).
 - **Project 3: API with Database (Medium+)**
     - [ ] Choose a DB (e.g., PostgreSQL, SQLite).
     - [ ] Set up DB connection (`database/sql`).
