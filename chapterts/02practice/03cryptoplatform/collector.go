@@ -31,25 +31,21 @@ func (c *RateCollector) Run(ctx context.Context) error {
 }
 
 func getPrices(ctx context.Context, pause time.Duration) {
-	l := utils.Logger(ctx)
+	logger := utils.Logger(ctx)
 
 	getPrices := func() {
 		if prices, err := coinmarketcap.GetPrices(); err != nil {
-			l.Error("get prices", "status", "error", "error", err)
+			logger.Error("get prices", "status", "error", "error", err)
 		} else {
-			l.Info("got prices", "status", "success", "prices", prices)
+			logger.Info("got prices", "status", "success", "prices", prices)
 		}
 	}
 
 	ticker := time.NewTicker(pause)
 	defer ticker.Stop()
 
-	firstTick := make(chan any, 1)
-	firstTick <- 1
-
-	getPrices()
 	for {
-		<-ticker.C
 		getPrices()
+		<-ticker.C
 	}
 }
