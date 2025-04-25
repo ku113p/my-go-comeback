@@ -25,15 +25,15 @@ func NewLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stderr, nil))
 }
 
-type RunnableHasLogger[T any] interface {
-	GetLogger() *slog.Logger
-	Run() T
+type RunnableToLog[T any] interface {
+	Run(ctx context.Context) T
 }
 
-func WrapRunningLog[T any](hl RunnableHasLogger[T], name string) T {
-	l := hl.GetLogger()
+func LogRun[T any](ctx context.Context, hl RunnableToLog[T], name string) T {
+	l := Logger(ctx)
+
 	l.Info(name, "status", "started")
-	result := hl.Run()
+	result := hl.Run(ctx)
 	l.Info(name, "status", "finished")
 
 	return result

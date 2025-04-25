@@ -4,18 +4,11 @@ import (
 	"context"
 	"crypto/platform/coinmarketcap"
 	"crypto/platform/utils"
-	"log/slog"
 	"sync"
 	"time"
 )
 
-type Parser interface {
-	Parse() error
-}
-
-type RateCollector struct {
-	ctx context.Context
-}
+type RateCollector struct{}
 
 func newRateCollector() *RateCollector {
 	p := RateCollector{}
@@ -23,36 +16,28 @@ func newRateCollector() *RateCollector {
 	return &p
 }
 
-func (c *RateCollector) WithContext(ctx context.Context) *RateCollector {
-	c.ctx = ctx
-	return c
-}
-
-func (c *RateCollector) GetLogger() *slog.Logger {
-	return utils.Logger(c.ctx)
-}
-
-func (c *RateCollector) Run() error {
+func (c *RateCollector) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	done := make(chan any, 1)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		getPrices(10*time.Second, *c.GetLogger(), done)
+		getPrices(ctx, 10*time.Second)
 	}()
 
 	return nil
 }
 
-func getPrices(pause time.Duration, logger slog.Logger, done <-chan any) {
+func getPrices(ctx context.Context, pause time.Duration) {
+	l := utils.Logger(ctx)
+
 	getPrices := func() {
 		if prices, err := coinmarketcap.GetPrices(); err != nil {
-			logger.Error("get prices", "status", "error", "error", err)
+			l.Error("get prices", "status", "error", "error", err)
 		} else {
-			logger.Info("got prices", "status", "success", "prices", prices)
+			l.Info("got prices", "status", "success", "prices", prices)
 		}
 	}
 
@@ -64,11 +49,7 @@ func getPrices(pause time.Duration, logger slog.Logger, done <-chan any) {
 
 	getPrices()
 	for {
-		select {
-		case <-done:
-			return
-		case <-ticker.C:
-			getPrices()
-		}
+		<-ticker.C
+		getPrices()
 	}
 }
