@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/platform/coinmarketcap"
+	"crypto/platform/db"
 	"crypto/platform/utils"
 	"sync"
 	"time"
@@ -32,13 +33,18 @@ func (c *RateCollector) Run(ctx context.Context) error {
 
 func getPrices(ctx context.Context, pause time.Duration) {
 	logger := utils.Logger(ctx)
+	database := db.Database(ctx)
 
 	getPrices := func() {
-		if prices, err := coinmarketcap.GetPrices(); err != nil {
-			logger.Error("get prices", "status", "error", "error", err)
-		} else {
-			logger.Info("got prices", "status", "success", "prices", prices)
+		logger.Info("get prices inited")
+		prices, err := coinmarketcap.GetPrices()
+		if err != nil {
+			logger.Error("get prices", "error", err)
+			return
 		}
+
+		database.UpdatePrices(prices)
+		logger.Info("update prices")
 	}
 
 	ticker := time.NewTicker(pause)

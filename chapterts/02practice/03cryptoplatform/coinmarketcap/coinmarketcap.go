@@ -89,7 +89,7 @@ func (r *request) fetch() ([]byte, error) {
 	return body, nil
 }
 
-func GetPrices() ([]models.TokenPrice, error) {
+func GetPrices() ([]*models.TokenPrice, error) {
 	apiKey, ok := os.LookupEnv(cmcEnvKey)
 	if !ok {
 		return nil, fmt.Errorf("env `%s` not found", cmcEnvKey)
@@ -118,16 +118,16 @@ type apiResponse struct {
 	} `json:"data"`
 }
 
-func parsePrices(data []byte) ([]models.TokenPrice, error) {
+func parsePrices(data []byte) ([]*models.TokenPrice, error) {
 	var apiResp apiResponse
 	if err := json.Unmarshal(data, &apiResp); err != nil {
 		return nil, err
 	}
 
-	prices := make([]models.TokenPrice, 0, len(apiResp.Data))
+	prices := make([]*models.TokenPrice, 0, len(apiResp.Data))
 	for _, d := range apiResp.Data {
 		tp := models.NewTokenPrice(d.Quote.USD.Price, d.Name, d.Symbol, d.Quote.USD.LastUpdated)
-		prices = append(prices, *tp)
+		prices = append(prices, tp)
 	}
 
 	return prices, nil
