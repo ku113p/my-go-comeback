@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const updateSeconds = 60
+
 type RateCollector struct {
 	app *app.App
 }
@@ -25,7 +27,7 @@ func (c *RateCollector) Run() error {
 	go func() {
 		defer wg.Done()
 
-		c.getPrices(10 * time.Second)
+		c.getPrices(updateSeconds * time.Second)
 	}()
 
 	return nil
