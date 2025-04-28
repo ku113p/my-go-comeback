@@ -6,28 +6,37 @@ import (
 )
 
 type InMemoryDB struct {
-	storage []*models.TokenPrice
+	storage map[string]*models.TokenPrice
 	locker  chan any
 }
 
 func NewInMemoryDB() *InMemoryDB {
 	return &InMemoryDB{
-		storage: make([]*models.TokenPrice, 0),
+		storage: make(map[string]*models.TokenPrice, 0),
 		locker:  make(chan any, 1),
 	}
 }
 
 func (db *InMemoryDB) UpdatePrices(newPirces []*models.TokenPrice) error {
-	db.storage = newPirces
+	db.locker <- nil
+	defer func() { <-db.locker }()
+
+	newStorage := make(map[string]*models.TokenPrice, len(newPirces))
+	for _, p := range newPirces {
+		newStorage[p.Symbol] = p
+	}
+	db.storage = newStorage
 	return nil
 }
 
 func (db *InMemoryDB) GetPrice(symbol string) (*models.TokenPrice, error) {
-	for _, tp := range db.storage {
-		if tp.Symbol == symbol {
-			return tp, nil
-		}
+	db.locker <- nil
+	defer func() { <-db.locker }()
+
+	tp, ok := db.storage[symbol]
+	if !ok {
+		return nil, fmt.Errorf("not found")
 	}
 
-	return nil, fmt.Errorf("not found")
+	return tp, nil
 }

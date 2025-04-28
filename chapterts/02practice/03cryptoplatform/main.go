@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/platform/app"
+	"crypto/platform/collectors"
 	"crypto/platform/db"
 	"crypto/platform/utils"
 	"sync"
@@ -9,19 +11,19 @@ import (
 func main() {
 	var wg sync.WaitGroup
 
-	logger := utils.NewLogger()
-	database := db.NewInMemoryDB()
+	l := utils.NewLogger()
+	d := db.NewInMemoryDB()
 
-	ctx := utils.NewContext()
-	ctx = utils.WithLogger(ctx, logger)
-	ctx = db.WithDatabase(ctx, database)
+	a := app.NewApp(l, d)
 
-	c := newRateCollector()
+	c := collectors.NewRateCollector(a)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := utils.LogRun(ctx, c, "collecting"); err != nil {
-			logger.Error("failed collect logs", "error", err)
+
+		toRun := func() error { return c.Run() }
+		if err := app.LogProcess(a, "collecting", toRun); err != nil {
+			l.Error("failed collect logs", "error", err)
 		}
 	}()
 
