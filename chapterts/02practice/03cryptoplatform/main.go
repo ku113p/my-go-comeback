@@ -11,10 +11,10 @@ import (
 func main() {
 	var wg sync.WaitGroup
 
-	l := utils.NewLogger()
-	d := db.NewInMemoryDB()
+	logger := utils.NewLogger()
+	db := db.NewInMemoryDBWithIDGen()
 
-	a := app.NewApp(l, d)
+	a := app.NewApp(logger, db)
 
 	c := collectors.NewRateCollector(a)
 	wg.Add(1)
@@ -23,7 +23,7 @@ func main() {
 
 		toRun := func() error { return c.Run() }
 		if err := app.LogProcess(a, "collecting", toRun); err != nil {
-			l.Error("failed collect logs", "error", err)
+			logger.Error("failed collect logs", "error", err)
 		}
 	}()
 
