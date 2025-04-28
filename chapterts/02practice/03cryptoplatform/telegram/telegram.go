@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
 )
 
 const tokenEnvKey = "TG_API_TOKEN"
@@ -24,11 +23,24 @@ const (
 	ModeWebhook
 )
 
-func (m mode) NewBot(a *app.App) *Bot {
-	return &Bot{a, m}
+func (m mode) NewBotHelper(a *app.App) *BotHelper {
+	return &BotHelper{a, m}
 }
 
-func (m mode) runBot(ctx context.Context, b *bot.Bot) error {
+func (m mode) runBot(opts ...bot.Option) error {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	botToken, ok := os.LookupEnv(tokenEnvKey)
+	if !ok {
+		return fmt.Errorf("env `%s` not found", tokenEnvKey)
+	}
+
+	b, err := bot.New(botToken, opts...)
+	if err != nil {
+		return err
+	}
+
 	switch m {
 	case ModePooling:
 		runPooling(ctx, b)
@@ -80,48 +92,4 @@ func getWebhookUrlAndPort() (*string, *int, error) {
 	}
 
 	return &url, &port, nil
-}
-
-type Bot struct {
-	app  *app.App
-	mode mode
-}
-
-func (b *Bot) Run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	opts := []bot.Option{
-		bot.WithDefaultHandler(handler),
-		bot.WithMessageTextHandler("foo", bot.MatchTypeCommand, command),
-	}
-
-	botToken, ok := os.LookupEnv(tokenEnvKey)
-	if !ok {
-		return fmt.Errorf("env `%s` not found", tokenEnvKey)
-	}
-	bot, err := bot.New(botToken, opts...)
-	if err != nil {
-		return err
-	}
-
-	if err := b.mode.runBot(ctx, bot); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   update.Message.Text,
-	})
-}
-
-func command(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   "bar",
-	})
 }
