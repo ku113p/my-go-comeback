@@ -2,6 +2,7 @@ package db
 
 import (
 	"crypto/platform/models"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -20,3 +21,5 @@ type DB interface {
 	CreateNotification(*models.Notification) (*models.Notification, error)
 	RemoveNotification(uuid.UUID) error
 }
+
+var ErrNotExists = fmt.Errorf("object not exists")

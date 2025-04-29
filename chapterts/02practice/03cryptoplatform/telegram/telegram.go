@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
 
 	"github.com/go-telegram/bot"
@@ -28,7 +27,7 @@ func (m mode) NewBotHelper(a *app.App) *BotHelper {
 }
 
 func (m mode) runBot(opts ...bot.Option) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	botToken, ok := os.LookupEnv(tokenEnvKey)
@@ -58,17 +57,17 @@ func runPooling(ctx context.Context, b *bot.Bot) {
 }
 
 func runWebhook(ctx context.Context, b *bot.Bot) error {
-	url, port, err := getWebhookUrlAndPort()
+	c, err := getWebhookConnect()
 	if err != nil {
 		return err
 	}
 
 	b.SetWebhook(ctx, &bot.SetWebhookParams{
-		URL: *url,
+		URL: c.url,
 	})
 
 	go func() {
-		http.ListenAndServe(fmt.Sprintf(":%d", *port), b.WebhookHandler())
+		http.ListenAndServe(fmt.Sprintf(":%d", c.port), b.WebhookHandler())
 	}()
 
 	b.StartWebhook(ctx)
@@ -76,20 +75,25 @@ func runWebhook(ctx context.Context, b *bot.Bot) error {
 	return nil
 }
 
-func getWebhookUrlAndPort() (*string, *int, error) {
+type webhookConnect struct {
+	url  string
+	port int
+}
+
+func getWebhookConnect() (*webhookConnect, error) {
 	url, ok := os.LookupEnv(webhookURLEnvKey)
 	if !ok {
-		return nil, nil, fmt.Errorf("env `%s` not found", webhookURLEnvKey)
+		return nil, fmt.Errorf("env `%s` not found", webhookURLEnvKey)
 	}
 
 	portStr, ok := os.LookupEnv(webhookPortEnvKey)
 	if !ok {
-		return nil, nil, fmt.Errorf("env `%s` not found", webhookPortEnvKey)
+		return nil, fmt.Errorf("env `%s` not found", webhookPortEnvKey)
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &url, &port, nil
+	return &webhookConnect{url, port}, nil
 }

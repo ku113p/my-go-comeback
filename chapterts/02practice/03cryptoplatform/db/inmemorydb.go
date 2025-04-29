@@ -96,8 +96,6 @@ func (db *InMemoryDB) GetUserByID(id uuid.UUID) (*models.User, error) {
 	return u, nil
 }
 
-var ErrNotExists = fmt.Errorf("object not exists")
-
 func (db *InMemoryDB) GetUserByTelegramChatID(id int64) (*models.User, error) {
 	db.locker <- nil
 	defer func() { <-db.locker }()
