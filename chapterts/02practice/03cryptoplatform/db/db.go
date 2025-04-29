@@ -17,6 +17,7 @@ type DB interface {
 	RemoveUser(uuid.UUID) error
 
 	ListNotificationsBySymbol(string) ([]*models.Notification, error)
+	GetNotificationByID(uuid.UUID) (*models.Notification, error)
 	ListNotificationsByUserID(uuid.UUID) ([]*models.Notification, error)
 	CreateNotification(*models.Notification) (*models.Notification, error)
 	RemoveNotification(uuid.UUID) error

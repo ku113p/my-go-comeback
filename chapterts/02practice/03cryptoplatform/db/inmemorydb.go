@@ -138,6 +138,18 @@ func (db *InMemoryDB) ListNotificationsByUserID(userID uuid.UUID) ([]*models.Not
 	return db.collectNotifications(suiteFunc)
 }
 
+func (db *InMemoryDB) GetNotificationByID(id uuid.UUID) (*models.Notification, error) {
+	db.locker <- nil
+	defer func() { <-db.locker }()
+
+	n, ok := db.notificationsStorage[id]
+	if !ok {
+		return nil, ErrNotExists
+	}
+
+	return n, nil
+}
+
 func (db *InMemoryDB) RemoveNotification(id uuid.UUID) error {
 	db.locker <- nil
 	defer func() { <-db.locker }()
