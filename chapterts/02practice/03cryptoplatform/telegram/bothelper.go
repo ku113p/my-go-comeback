@@ -5,6 +5,7 @@ import (
 	"crypto/platform/app"
 	"crypto/platform/db"
 	"crypto/platform/models"
+	"crypto/platform/utils"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -29,6 +30,9 @@ func (h *BotHelper) Run() error {
 		bot.WithMessageTextHandler("add", bot.MatchTypeCommand, h.addCommand),
 		bot.WithMessageTextHandler("list", bot.MatchTypeCommand, h.listCommand),
 		bot.WithCallbackQueryDataHandler("n_", bot.MatchTypePrefix, h.notificationCallbackHandler),
+		bot.WithCallbackQueryDataHandler("rdn_", bot.MatchTypePrefix, h.requestDeleteNotificationCallbackHandler),
+		bot.WithCallbackQueryDataHandler("dn_", bot.MatchTypePrefix, h.deleteNotificationCallbackHandler),
+		bot.WithCallbackQueryDataHandler("dm_", bot.MatchTypePrefix, h.deleteMessageCallbackHandler),
 	}
 
 	return h.mode.runBot(opts...)
@@ -107,7 +111,7 @@ func newHandlerHelper(ctx context.Context, b *bot.Bot, chatID int64, a *app.App)
 	sendMessage := sendMessageFunc(ctx, chatID, b, a.Logger)
 	sendUnexpectedError := func(subject string, err error) {
 		a.Logger.Error(subject, "error", err)
-		sendMessageFunc(ctx, chatID, b, a.Logger)
+		sendMessage("Unexpected error occurred")
 	}
 
 	return &handlerHelper{u, sendMessage, sendUnexpectedError}
@@ -147,10 +151,7 @@ func (h *BotHelper) addCommand(ctx context.Context, b *bot.Bot, update *telegram
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   fmt.Sprintf("Notification #{%s} created.", *n.ID),
-	})
+	hh.sendMessage(fmt.Sprintf("Notification #{%s} created.", *n.ID))
 }
 
 func newNotificationFromString(s string) (*models.Notification, error) {
@@ -230,12 +231,12 @@ func notificationsKeyboard(ns []*models.Notification) *telegramModels.InlineKeyb
 }
 
 func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	hh := newHandlerHelper(ctx, b, update.Message.Chat.ID, h.App)
-
 	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: update.CallbackQuery.ID,
 		ShowAlert:       false,
 	})
+
+	hh := newHandlerHelper(ctx, b, update.CallbackQuery.From.ID, h.App)
 
 	s := strings.Replace(update.CallbackQuery.Data, "n_", "", 1)
 	s = strings.Trim(s, " ")
@@ -256,9 +257,117 @@ func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot,
 		return
 	}
 
-	text := fmt.Sprintf("Notification\nSymbol: %v\nWhen: %v\nAmount: %v", n.Symbol, n.Sign.When(), n.Amount)
+	text := fmt.Sprintf("Notification\nSymbol: %v\nWhen: %v\nAmount: $%v", n.Symbol, n.Sign.When(), utils.FloatComma(n.Amount))
+	kb := &telegramModels.InlineKeyboardMarkup{
+		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
+			{
+				{
+					Text:         "Delete ❌",
+					CallbackData: fmt.Sprintf("rdn_%v", n.ID.String()),
+				},
+			},
+		},
+	}
 	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.CallbackQuery.Message.Message.Chat.ID,
-		Text:   text,
+		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		Text:        text,
+		ReplyMarkup: kb,
 	})
+}
+
+func (h *BotHelper) requestDeleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+
+	hh := newHandlerHelper(ctx, b, update.CallbackQuery.From.ID, h.App)
+
+	s := strings.Replace(update.CallbackQuery.Data, "rdn_", "", 1)
+	s = strings.Trim(s, " ")
+
+	notificationID, err := uuid.Parse(s)
+	if err != nil {
+		hh.sendUnexpectedError("failed parse notification id", err)
+		return
+	}
+
+	n, err := h.DB.GetNotificationByID(notificationID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotExists) {
+			hh.sendMessage("notification not found")
+			return
+		}
+		hh.sendUnexpectedError("failed get notification by id", err)
+		return
+	}
+
+	text := fmt.Sprintf("Are you sure you want to delete this %v notification?", n.Symbol)
+	kb := &telegramModels.InlineKeyboardMarkup{
+		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
+			{
+				{
+					Text:         "Delete ❌",
+					CallbackData: fmt.Sprintf("dn_%v", n.ID.String()),
+				},
+				{
+					Text:         "Cancel ⭕",
+					CallbackData: fmt.Sprintf("dm_%v", nil),
+				},
+			},
+		},
+	}
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
+		Text:        text,
+		ReplyMarkup: kb,
+	})
+}
+
+func (h *BotHelper) deleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+
+	hh := newHandlerHelper(ctx, b, update.CallbackQuery.From.ID, h.App)
+
+	s := strings.Replace(update.CallbackQuery.Data, "dn_", "", 1)
+	s = strings.Trim(s, " ")
+
+	notificationID, err := uuid.Parse(s)
+	if err != nil {
+		hh.sendUnexpectedError("failed parse notification id", err)
+		return
+	}
+
+	err = h.DB.RemoveNotification(notificationID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotExists) {
+			hh.sendMessage("notification not found")
+			return
+		}
+		hh.sendUnexpectedError("failed delete notification", err)
+		return
+	}
+
+	hh.sendMessage("Notification deleted")
+}
+
+func (h *BotHelper) deleteMessageCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: update.CallbackQuery.ID,
+		ShowAlert:       false,
+	})
+
+	hh := newHandlerHelper(ctx, b, update.CallbackQuery.From.ID, h.App)
+
+	if _, err := b.DeleteMessage(ctx, &bot.DeleteMessageParams{
+		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
+		MessageID: update.CallbackQuery.Message.Message.ID,
+	}); err != nil {
+		hh.sendUnexpectedError("failed delete message", err)
+		return
+	}
+	hh.sendMessage("Cancelled")
 }
