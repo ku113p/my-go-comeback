@@ -31,10 +31,10 @@ type Notification struct {
 	Symbol string
 	Check  func(p *TokenPrice) bool
 	Text   *string
-	UserID uuid.UUID
+	UserID *uuid.UUID
 }
 
-func NewNotification(symbol string, check func(p *TokenPrice) bool, userID uuid.UUID, text *string) *Notification {
+func NewNotification(symbol string, check func(p *TokenPrice) bool, userID *uuid.UUID, text *string) *Notification {
 	return &Notification{
 		Symbol: symbol,
 		Check:  check,

@@ -133,7 +133,7 @@ func (db *InMemoryDB) collectNotifications(suite func(*models.Notification) bool
 
 func (db *InMemoryDB) ListNotificationsByUserID(userID uuid.UUID) ([]*models.Notification, error) {
 	suiteFunc := func(n *models.Notification) bool {
-		return n.UserID == userID
+		return *n.UserID == userID
 	}
 	return db.collectNotifications(suiteFunc)
 }
