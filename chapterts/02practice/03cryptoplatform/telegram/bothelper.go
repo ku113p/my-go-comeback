@@ -4,12 +4,11 @@ import (
 	"context"
 	"crypto/platform/app"
 	"crypto/platform/db"
-	"crypto/platform/models"
+	"crypto/platform/telegram/handlers"
 	"crypto/platform/telegram/middleware"
 	"crypto/platform/utils"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/go-telegram/bot"
@@ -26,13 +25,19 @@ func (h *BotHelper) Run() error {
 	opts := []bot.Option{
 		bot.WithMiddlewares(h.withTelegramRequestHelper),
 		bot.WithDefaultHandler(h.defaultHandler),
-		bot.WithMessageTextHandler("help", bot.MatchTypeCommand, helpCommand),
-		bot.WithMessageTextHandler("add", bot.MatchTypeCommand, h.addCommand),
-		bot.WithMessageTextHandler("list", bot.MatchTypeCommand, h.listCommand),
 		bot.WithCallbackQueryDataHandler("n_", bot.MatchTypePrefix, h.notificationCallbackHandler),
 		bot.WithCallbackQueryDataHandler("rdn_", bot.MatchTypePrefix, h.requestDeleteNotificationCallbackHandler),
 		bot.WithCallbackQueryDataHandler("dn_", bot.MatchTypePrefix, h.deleteNotificationCallbackHandler),
 		bot.WithCallbackQueryDataHandler("dm_", bot.MatchTypePrefix, h.deleteMessageCallbackHandler),
+	}
+
+	commandHandlers := []handlers.CommandHandler{
+		handlers.NewHelpCommand(h.App),
+		handlers.NewAddCommand(h.App),
+		handlers.NewListCommand(h.App),
+	}
+	for _, c := range commandHandlers {
+		opts = append(opts, bot.WithMessageTextHandler(c.Command(), bot.MatchTypeCommand, c.Handle))
 	}
 
 	return h.mode.runBot(opts...)
@@ -48,111 +53,8 @@ func (h *BotHelper) defaultHandler(ctx context.Context, b *bot.Bot, update *tele
 	}
 }
 
-func helpCommand(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   "This bot help to monitor crypto prices",
-	})
-}
-
 func (h *BotHelper) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerFunc {
 	return middleware.WithTelegramRequestHelper(next, h.App)
-}
-
-func (h *BotHelper) addCommand(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-
-	s := strings.Replace(update.Message.Text, "/add ", "", 1)
-	s = strings.Trim(s, " ")
-
-	n, err := newNotificationFromString(s)
-	if err != nil {
-		telegramHelper.SendError(fmt.Sprintf("%s", err))
-		return
-	}
-
-	token, err := h.DB.GetPrice(n.Symbol)
-	if err != nil {
-		telegramHelper.SendUnexpectedError("failed get price", err)
-		return
-	}
-
-	if n.Check(token) {
-		telegramHelper.SendError("price already reached target amount")
-		return
-	}
-
-	n.UserID = telegramHelper.User.ID
-	n, err = h.DB.CreateNotification(n)
-	if err != nil {
-		telegramHelper.SendUnexpectedError("failed create notification", err)
-		return
-	}
-
-	telegramHelper.SendMessage(fmt.Sprintf("Notification #{%s} created.", *n.ID))
-}
-
-func newNotificationFromString(s string) (*models.Notification, error) {
-	words := strings.SplitN(s, " ", 3)
-	if len(words) != 3 {
-		return nil, fmt.Errorf("invalid format")
-	}
-
-	symbol, signString, amountString := words[0], words[1], words[2]
-	symbol = strings.ToUpper(symbol)
-
-	sign, err := models.ParseSign(signString)
-	if err != nil {
-		return nil, fmt.Errorf("invalid sign")
-	}
-
-	amountString = strings.ReplaceAll(amountString, ",", ".")
-	amount, err := strconv.ParseFloat(amountString, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid amount")
-	}
-
-	msg := fmt.Sprintf("price %v %v %v", symbol, sign.String(), amount)
-	n := models.NewNotification(symbol, *sign, amount, nil, &msg)
-
-	return n, nil
-}
-
-func (h *BotHelper) listCommand(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-
-	ns, err := h.DB.ListNotificationsByUserID(*telegramHelper.User.ID)
-	if err != nil {
-		telegramHelper.SendUnexpectedError("failed list notifications", err)
-		return
-	}
-	kb := notificationsKeyboard(ns)
-
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      update.Message.Chat.ID,
-		Text:        fmt.Sprintf("You have %d Notificatins", len(ns)),
-		ReplyMarkup: kb,
-	})
-	if err != nil {
-		h.Logger.Error("failed send message", "error", err)
-	}
-}
-
-func notificationsKeyboard(ns []*models.Notification) *telegramModels.InlineKeyboardMarkup {
-	buttons := make([][]telegramModels.InlineKeyboardButton, 0)
-	for _, n := range ns {
-		row := []telegramModels.InlineKeyboardButton{
-			{
-				Text:         fmt.Sprintf("%v %s $%v", n.Symbol, n.Sign, n.Amount),
-				CallbackData: fmt.Sprintf("n_%v", n.ID.String()),
-			},
-		}
-		buttons = append(buttons, row)
-	}
-
-	return &telegramModels.InlineKeyboardMarkup{
-		InlineKeyboard: buttons,
-	}
 }
 
 func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
