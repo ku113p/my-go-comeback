@@ -12,15 +12,21 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
+func AttachCommand(cmd Command, opts []bot.Option, adapter func(HandlerFunc) bot.HandlerFunc) []bot.Option {
+	wrappedHandler := adapter(cmd.Handle)
+	opts = append(opts, bot.WithMessageTextHandler(cmd.Name(), bot.MatchTypeCommand, wrappedHandler))
+	return opts
+}
+
 type HelpCommand struct {
 	*app.App
 }
 
 func NewHelpCommand(a *app.App) *HelpCommand {
-	return &HelpCommand{a}
+	return &HelpCommand{App: a}
 }
 
-func (c *HelpCommand) Command() string {
+func (c *HelpCommand) Name() string {
 	return "help"
 }
 
@@ -36,7 +42,7 @@ func NewAddCommand(a *app.App) *AddCommand {
 	return &AddCommand{a}
 }
 
-func (c *AddCommand) Command() string {
+func (c *AddCommand) Name() string {
 	return "add"
 }
 
@@ -79,7 +85,7 @@ func NewListCommand(a *app.App) *ListCommand {
 	return &ListCommand{a}
 }
 
-func (c *ListCommand) Command() string {
+func (c *ListCommand) Name() string {
 	return "list"
 }
 
