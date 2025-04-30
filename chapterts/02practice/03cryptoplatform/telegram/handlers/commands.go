@@ -24,9 +24,7 @@ func (c *HelpCommand) Command() string {
 	return "help"
 }
 
-func (c *HelpCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update) {
-	h := middleware.ContextTelegramRequestHelper(ctx)
-
+func (c *HelpCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
 	h.SendMessage("This bot help to monitor crypto prices")
 }
 
@@ -42,37 +40,35 @@ func (c *AddCommand) Command() string {
 	return "add"
 }
 
-func (c *AddCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update) {
-	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-
+func (c *AddCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
 	s := strings.Replace(update.Message.Text, "/add ", "", 1)
 	s = strings.Trim(s, " ")
 
 	n, err := newNotificationFromString(s)
 	if err != nil {
-		telegramHelper.SendError(fmt.Sprintf("%s", err))
+		h.SendError(fmt.Sprintf("%s", err))
 		return
 	}
 
 	token, err := c.DB.GetPrice(n.Symbol)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed get price", err)
+		h.SendUnexpectedError("failed get price", err)
 		return
 	}
 
 	if n.Check(token) {
-		telegramHelper.SendError("price already reached target amount")
+		h.SendError("price already reached target amount")
 		return
 	}
 
-	n.UserID = telegramHelper.User.ID
+	n.UserID = h.User.ID
 	n, err = c.DB.CreateNotification(n)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed create notification", err)
+		h.SendUnexpectedError("failed create notification", err)
 		return
 	}
 
-	telegramHelper.SendMessage(fmt.Sprintf("Notification #{%s} created.", *n.ID))
+	h.SendMessage(fmt.Sprintf("Notification #{%s} created.", *n.ID))
 }
 
 type ListCommand struct {
@@ -87,12 +83,10 @@ func (c *ListCommand) Command() string {
 	return "list"
 }
 
-func (c *ListCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update) {
-	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-
-	ns, err := c.DB.ListNotificationsByUserID(*telegramHelper.User.ID)
+func (c *ListCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
+	ns, err := c.DB.ListNotificationsByUserID(*h.User.ID)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed list notifications", err)
+		h.SendUnexpectedError("failed list notifications", err)
 		return
 	}
 	kb := view.NotificationsKeyboard(ns)

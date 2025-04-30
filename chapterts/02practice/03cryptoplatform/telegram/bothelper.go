@@ -31,16 +31,28 @@ func (h *BotHelper) Run() error {
 		bot.WithCallbackQueryDataHandler("dm_", bot.MatchTypePrefix, h.deleteMessageCallbackHandler),
 	}
 
-	commandHandlers := []handlers.CommandHandler{
+	commandHandlers := h.commandHandlers()
+	for _, c := range commandHandlers {
+		wrappedHandler := h.wrapHandler(c.Handle)
+		opts = append(opts, bot.WithMessageTextHandler(c.Command(), bot.MatchTypeCommand, wrappedHandler))
+	}
+
+	return h.mode.runBot(opts...)
+}
+
+func (h *BotHelper) commandHandlers() []handlers.CommandHandler {
+	return []handlers.CommandHandler{
 		handlers.NewHelpCommand(h.App),
 		handlers.NewAddCommand(h.App),
 		handlers.NewListCommand(h.App),
 	}
-	for _, c := range commandHandlers {
-		opts = append(opts, bot.WithMessageTextHandler(c.Command(), bot.MatchTypeCommand, c.Handle))
-	}
+}
 
-	return h.mode.runBot(opts...)
+func (h *BotHelper) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+		fn(ctx, b, update, telegramHelper)
+	}
 }
 
 func (h *BotHelper) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
