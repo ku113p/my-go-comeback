@@ -6,7 +6,6 @@ import (
 	"crypto/platform/db"
 	"crypto/platform/models"
 	"errors"
-	"log/slog"
 
 	"github.com/go-telegram/bot"
 	telegramModels "github.com/go-telegram/bot/models"
@@ -38,7 +37,18 @@ func newTelegramRequestHelper(b *bot.Bot, chatID int64, a *app.App) (*TelegramRe
 }
 
 func (h *TelegramRequestHelper) SendMessage(ctx context.Context, text string) {
-	sendMessageFunc(ctx, h.chatID, h.b, h.Logger)(text)
+	_, err := h.b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: h.chatID,
+		Text:   text,
+	})
+
+	h.logErrorIfNeed(err)
+}
+
+func (h *TelegramRequestHelper) logErrorIfNeed(err error) {
+	if err != nil {
+		h.Logger.Error("failed send message", "error", err)
+	}
 }
 
 func (h *TelegramRequestHelper) SendError(ctx context.Context, message string) {
@@ -50,24 +60,32 @@ func (h *TelegramRequestHelper) SendUnexpectedError(ctx context.Context, subject
 	h.SendMessage(ctx, "Unexpected error occurred")
 }
 
-func sendMessageFunc(ctx context.Context, chatID int64, b *bot.Bot, logger *slog.Logger) func(string) {
-	return func(msg string) {
-		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   msg,
-		})
-
-		if err != nil {
-			logger.Error("failed send message", "error", err)
-		}
-	}
-}
-
-func (h *TelegramRequestHelper) AnswerCallbackQuery(ctx context.Context, callbackQueryID string) (bool, error) {
-	return h.b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+func (h *TelegramRequestHelper) AnswerCallbackQuery(ctx context.Context, callbackQueryID string) {
+	_, err := h.b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: callbackQueryID,
 		ShowAlert:       false,
 	})
+
+	h.logErrorIfNeed(err)
+}
+
+func (h *TelegramRequestHelper) SendMessageWithMarkup(ctx context.Context, text string, kb telegramModels.ReplyMarkup) {
+	_, err := h.b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      h.chatID,
+		Text:        text,
+		ReplyMarkup: kb,
+	})
+
+	h.logErrorIfNeed(err)
+}
+
+func (h *TelegramRequestHelper) DeleteMessage(ctx context.Context, messageID int) {
+	_, err := h.b.DeleteMessage(ctx, &bot.DeleteMessageParams{
+		ChatID:    h.chatID,
+		MessageID: messageID,
+	})
+
+	h.logErrorIfNeed(err)
 }
 
 type helperKeyType string

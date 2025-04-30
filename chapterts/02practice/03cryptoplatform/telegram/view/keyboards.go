@@ -7,7 +7,7 @@ import (
 	telegramModels "github.com/go-telegram/bot/models"
 )
 
-func NotificationsKeyboard(ns []*models.Notification) *telegramModels.InlineKeyboardMarkup {
+func BuildNotificationsKeyboard(ns []*models.Notification) *telegramModels.InlineKeyboardMarkup {
 	buttons := make([][]telegramModels.InlineKeyboardButton, 0)
 	for _, n := range ns {
 		row := []telegramModels.InlineKeyboardButton{
@@ -21,5 +21,35 @@ func NotificationsKeyboard(ns []*models.Notification) *telegramModels.InlineKeyb
 
 	return &telegramModels.InlineKeyboardMarkup{
 		InlineKeyboard: buttons,
+	}
+}
+
+func BuildNotificationInfoKeyboard(n *models.Notification) *telegramModels.InlineKeyboardMarkup {
+	return &telegramModels.InlineKeyboardMarkup{
+		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
+			{
+				{
+					Text:         "Delete ❌",
+					CallbackData: fmt.Sprintf("rdn_%v", n.ID.String()),
+				},
+			},
+		},
+	}
+}
+
+func BuildConfirmDeleteNotificationKeyboard(n *models.Notification) *telegramModels.InlineKeyboardMarkup {
+	return &telegramModels.InlineKeyboardMarkup{
+		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
+			{
+				{
+					Text:         "Delete ❌",
+					CallbackData: fmt.Sprintf("dn_%v", n.ID.String()),
+				},
+				{
+					Text:         "Cancel ⭕",
+					CallbackData: fmt.Sprintf("dm_%v", nil),
+				},
+			},
+		},
 	}
 }

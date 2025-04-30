@@ -6,6 +6,7 @@ import (
 	"crypto/platform/db"
 	"crypto/platform/telegram/handlers"
 	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/view"
 	"crypto/platform/utils"
 	"errors"
 	"fmt"
@@ -90,21 +91,8 @@ func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot,
 	}
 
 	text := fmt.Sprintf("Notification\nSymbol: %v\nWhen: %v\nAmount: $%v", n.Symbol, n.Sign.When(), utils.FloatComma(n.Amount))
-	kb := &telegramModels.InlineKeyboardMarkup{
-		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
-			{
-				{
-					Text:         "Delete ❌",
-					CallbackData: fmt.Sprintf("rdn_%v", n.ID.String()),
-				},
-			},
-		},
-	}
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
-		Text:        text,
-		ReplyMarkup: kb,
-	})
+	kb := view.BuildNotificationInfoKeyboard(n)
+	telegramHelper.SendMessageWithMarkup(ctx, text, kb)
 }
 
 func (h *BotHelper) requestDeleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
@@ -131,25 +119,8 @@ func (h *BotHelper) requestDeleteNotificationCallbackHandler(ctx context.Context
 	}
 
 	text := fmt.Sprintf("Are you sure you want to delete this %v notification?", n.Symbol)
-	kb := &telegramModels.InlineKeyboardMarkup{
-		InlineKeyboard: [][]telegramModels.InlineKeyboardButton{
-			{
-				{
-					Text:         "Delete ❌",
-					CallbackData: fmt.Sprintf("dn_%v", n.ID.String()),
-				},
-				{
-					Text:         "Cancel ⭕",
-					CallbackData: fmt.Sprintf("dm_%v", nil),
-				},
-			},
-		},
-	}
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      update.CallbackQuery.Message.Message.Chat.ID,
-		Text:        text,
-		ReplyMarkup: kb,
-	})
+	kb := view.BuildConfirmDeleteNotificationKeyboard(n)
+	telegramHelper.SendMessageWithMarkup(ctx, text, kb)
 }
 
 func (h *BotHelper) deleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
@@ -182,12 +153,6 @@ func (h *BotHelper) deleteMessageCallbackHandler(ctx context.Context, b *bot.Bot
 	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
 	telegramHelper.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
-	if _, err := b.DeleteMessage(ctx, &bot.DeleteMessageParams{
-		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
-		MessageID: update.CallbackQuery.Message.Message.ID,
-	}); err != nil {
-		telegramHelper.SendUnexpectedError(ctx, "failed delete message", err)
-		return
-	}
+	telegramHelper.DeleteMessage(ctx, update.CallbackQuery.Message.Message.ID)
 	telegramHelper.SendMessage(ctx, "Cancelled")
 }

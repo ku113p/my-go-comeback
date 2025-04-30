@@ -89,7 +89,7 @@ func (c *ListCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Upd
 		h.SendUnexpectedError(ctx, "failed list notifications", err)
 		return
 	}
-	kb := view.NotificationsKeyboard(ns)
+	kb := view.BuildNotificationsKeyboard(ns)
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:      update.Message.Chat.ID,
