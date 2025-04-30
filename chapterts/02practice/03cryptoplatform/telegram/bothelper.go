@@ -58,10 +58,7 @@ func (h *BotHelper) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
 func (h *BotHelper) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
 	if update.Message != nil {
 		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-		b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: update.Message.Chat.ID,
-			Text:   fmt.Sprintf("%#v", telegramHelper.User),
-		})
+		telegramHelper.SendMessage(ctx, fmt.Sprintf("%#v", telegramHelper.User))
 	}
 }
 
@@ -70,29 +67,25 @@ func (h *BotHelper) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerF
 }
 
 func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-
 	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+	telegramHelper.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "n_", "", 1)
 	s = strings.Trim(s, " ")
 
 	notificationID, err := uuid.Parse(s)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed parse notification id", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed parse notification id", err)
 		return
 	}
 
 	n, err := h.DB.GetNotificationByID(notificationID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotExists) {
-			telegramHelper.SendMessage("notification not found")
+			telegramHelper.SendMessage(ctx, "notification not found")
 			return
 		}
-		telegramHelper.SendUnexpectedError("failed get notification by id", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed get notification by id", err)
 		return
 	}
 
@@ -115,29 +108,25 @@ func (h *BotHelper) notificationCallbackHandler(ctx context.Context, b *bot.Bot,
 }
 
 func (h *BotHelper) requestDeleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-
 	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+	telegramHelper.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "rdn_", "", 1)
 	s = strings.Trim(s, " ")
 
 	notificationID, err := uuid.Parse(s)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed parse notification id", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed parse notification id", err)
 		return
 	}
 
 	n, err := h.DB.GetNotificationByID(notificationID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotExists) {
-			telegramHelper.SendMessage("notification not found")
+			telegramHelper.SendMessage(ctx, "notification not found")
 			return
 		}
-		telegramHelper.SendUnexpectedError("failed get notification by id", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed get notification by id", err)
 		return
 	}
 
@@ -164,49 +153,41 @@ func (h *BotHelper) requestDeleteNotificationCallbackHandler(ctx context.Context
 }
 
 func (h *BotHelper) deleteNotificationCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-
 	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+	telegramHelper.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "dn_", "", 1)
 	s = strings.Trim(s, " ")
 
 	notificationID, err := uuid.Parse(s)
 	if err != nil {
-		telegramHelper.SendUnexpectedError("failed parse notification id", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed parse notification id", err)
 		return
 	}
 
 	err = h.DB.RemoveNotification(notificationID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotExists) {
-			telegramHelper.SendMessage("notification not found")
+			telegramHelper.SendMessage(ctx, "notification not found")
 			return
 		}
-		telegramHelper.SendUnexpectedError("failed delete notification", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed delete notification", err)
 		return
 	}
 
-	telegramHelper.SendMessage("Notification deleted")
+	telegramHelper.SendMessage(ctx, "Notification deleted")
 }
 
 func (h *BotHelper) deleteMessageCallbackHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-		CallbackQueryID: update.CallbackQuery.ID,
-		ShowAlert:       false,
-	})
-
 	telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+	telegramHelper.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	if _, err := b.DeleteMessage(ctx, &bot.DeleteMessageParams{
 		ChatID:    update.CallbackQuery.Message.Message.Chat.ID,
 		MessageID: update.CallbackQuery.Message.Message.ID,
 	}); err != nil {
-		telegramHelper.SendUnexpectedError("failed delete message", err)
+		telegramHelper.SendUnexpectedError(ctx, "failed delete message", err)
 		return
 	}
-	telegramHelper.SendMessage("Cancelled")
+	telegramHelper.SendMessage(ctx, "Cancelled")
 }

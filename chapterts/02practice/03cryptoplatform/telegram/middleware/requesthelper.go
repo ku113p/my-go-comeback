@@ -14,12 +14,12 @@ import (
 
 type TelegramRequestHelper struct {
 	*app.App
-	User                *models.User
-	SendMessage         func(string)
-	SendUnexpectedError func(string, error)
+	b      *bot.Bot
+	chatID int64
+	User   *models.User
 }
 
-func newTelegramRequestHelper(ctx context.Context, b *bot.Bot, chatID int64, a *app.App) (*TelegramRequestHelper, error) {
+func newTelegramRequestHelper(b *bot.Bot, chatID int64, a *app.App) (*TelegramRequestHelper, error) {
 	u, err := a.DB.GetUserByTelegramChatID(chatID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotExists) {
@@ -34,17 +34,20 @@ func newTelegramRequestHelper(ctx context.Context, b *bot.Bot, chatID int64, a *
 		}
 	}
 
-	sendMessage := sendMessageFunc(ctx, chatID, b, a.Logger)
-	sendUnexpectedError := func(subject string, err error) {
-		a.Logger.Error(subject, "error", err)
-		sendMessage("Unexpected error occurred")
-	}
-
-	return &TelegramRequestHelper{a, u, sendMessage, sendUnexpectedError}, nil
+	return &TelegramRequestHelper{a, b, chatID, u}, nil
 }
 
-func (h *TelegramRequestHelper) SendError(message string) {
-	h.SendMessage(message)
+func (h *TelegramRequestHelper) SendMessage(ctx context.Context, text string) {
+	sendMessageFunc(ctx, h.chatID, h.b, h.Logger)(text)
+}
+
+func (h *TelegramRequestHelper) SendError(ctx context.Context, message string) {
+	h.SendMessage(ctx, message)
+}
+
+func (h *TelegramRequestHelper) SendUnexpectedError(ctx context.Context, subject string, err error) {
+	h.Logger.Error(subject, "error", err)
+	h.SendMessage(ctx, "Unexpected error occurred")
 }
 
 func sendMessageFunc(ctx context.Context, chatID int64, b *bot.Bot, logger *slog.Logger) func(string) {
@@ -58,6 +61,13 @@ func sendMessageFunc(ctx context.Context, chatID int64, b *bot.Bot, logger *slog
 			logger.Error("failed send message", "error", err)
 		}
 	}
+}
+
+func (h *TelegramRequestHelper) AnswerCallbackQuery(ctx context.Context, callbackQueryID string) (bool, error) {
+	return h.b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: callbackQueryID,
+		ShowAlert:       false,
+	})
 }
 
 type helperKeyType string
@@ -84,7 +94,7 @@ func WithTelegramRequestHelper(next bot.HandlerFunc, a *app.App) bot.HandlerFunc
 			return
 		}
 
-		h, err := newTelegramRequestHelper(ctx, b, chatID, a)
+		h, err := newTelegramRequestHelper(b, chatID, a)
 		if err != nil {
 			a.Logger.Error("failed create telegram TelegramRequestHelper", "error", err)
 			return

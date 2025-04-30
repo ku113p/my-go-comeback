@@ -25,7 +25,7 @@ func (c *HelpCommand) Command() string {
 }
 
 func (c *HelpCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
-	h.SendMessage("This bot help to monitor crypto prices")
+	h.SendMessage(ctx, "This bot help to monitor crypto prices")
 }
 
 type AddCommand struct {
@@ -46,29 +46,29 @@ func (c *AddCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Upda
 
 	n, err := newNotificationFromString(s)
 	if err != nil {
-		h.SendError(fmt.Sprintf("%s", err))
+		h.SendError(ctx, fmt.Sprintf("%s", err))
 		return
 	}
 
 	token, err := c.DB.GetPrice(n.Symbol)
 	if err != nil {
-		h.SendUnexpectedError("failed get price", err)
+		h.SendUnexpectedError(ctx, "failed get price", err)
 		return
 	}
 
 	if n.Check(token) {
-		h.SendError("price already reached target amount")
+		h.SendError(ctx, "price already reached target amount")
 		return
 	}
 
 	n.UserID = h.User.ID
 	n, err = c.DB.CreateNotification(n)
 	if err != nil {
-		h.SendUnexpectedError("failed create notification", err)
+		h.SendUnexpectedError(ctx, "failed create notification", err)
 		return
 	}
 
-	h.SendMessage(fmt.Sprintf("Notification #{%s} created.", *n.ID))
+	h.SendMessage(ctx, fmt.Sprintf("Notification #{%s} created.", *n.ID))
 }
 
 type ListCommand struct {
@@ -86,7 +86,7 @@ func (c *ListCommand) Command() string {
 func (c *ListCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
 	ns, err := c.DB.ListNotificationsByUserID(*h.User.ID)
 	if err != nil {
-		h.SendUnexpectedError("failed list notifications", err)
+		h.SendUnexpectedError(ctx, "failed list notifications", err)
 		return
 	}
 	kb := view.NotificationsKeyboard(ns)
