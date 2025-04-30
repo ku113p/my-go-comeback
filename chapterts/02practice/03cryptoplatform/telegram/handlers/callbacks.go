@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"crypto/platform/app"
-	"crypto/platform/db"
 	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/services"
 	"crypto/platform/telegram/view"
 	"crypto/platform/utils"
 	"errors"
@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"github.com/google/uuid"
 )
 
 func AttachCallbackQueryData(cb CallbackQueryData, opts []bot.Option, adapter func(HandlerFunc) bot.HandlerFunc) []bot.Option {
@@ -40,16 +39,11 @@ func (c *NotificationInfoCallbackQueryData) Handle(ctx context.Context, b *bot.B
 	s := strings.Replace(update.CallbackQuery.Data, "n_", "", 1)
 	s = strings.Trim(s, " ")
 
-	notificationID, err := uuid.Parse(s)
+	n, err := h.NotificationService.GetNotificationByID(s)
 	if err != nil {
-		h.SendUnexpectedError(ctx, "failed parse notification id", err)
-		return
-	}
-
-	n, err := h.DB.GetNotificationByID(notificationID)
-	if err != nil {
-		if errors.Is(err, db.ErrNotExists) {
-			h.SendMessage(ctx, "notification not found")
+		var expectedError *services.ExpectedError
+		if errors.As(err, &expectedError) {
+			h.SendError(ctx, expectedError.Message)
 			return
 		}
 		h.SendUnexpectedError(ctx, "failed get notification by id", err)
@@ -79,16 +73,11 @@ func (c *RequestDeleteNotificationCallbackQueryData) Handle(ctx context.Context,
 	s := strings.Replace(update.CallbackQuery.Data, "rdn_", "", 1)
 	s = strings.Trim(s, " ")
 
-	notificationID, err := uuid.Parse(s)
+	n, err := h.NotificationService.GetNotificationByID(s)
 	if err != nil {
-		h.SendUnexpectedError(ctx, "failed parse notification id", err)
-		return
-	}
-
-	n, err := h.DB.GetNotificationByID(notificationID)
-	if err != nil {
-		if errors.Is(err, db.ErrNotExists) {
-			h.SendMessage(ctx, "notification not found")
+		var expectedError *services.ExpectedError
+		if errors.As(err, &expectedError) {
+			h.SendError(ctx, expectedError.Message)
 			return
 		}
 		h.SendUnexpectedError(ctx, "failed get notification by id", err)
@@ -118,16 +107,10 @@ func (c *DeleteNotificationCallbackQueryData) Handle(ctx context.Context, b *bot
 	s := strings.Replace(update.CallbackQuery.Data, "dn_", "", 1)
 	s = strings.Trim(s, " ")
 
-	notificationID, err := uuid.Parse(s)
-	if err != nil {
-		h.SendUnexpectedError(ctx, "failed parse notification id", err)
-		return
-	}
-
-	err = h.DB.RemoveNotification(notificationID)
-	if err != nil {
-		if errors.Is(err, db.ErrNotExists) {
-			h.SendMessage(ctx, "notification not found")
+	if err := h.NotificationService.DeleteNotificationByID(s); err != nil {
+		var expectedError *services.ExpectedError
+		if errors.As(err, &expectedError) {
+			h.SendError(ctx, expectedError.Message)
 			return
 		}
 		h.SendUnexpectedError(ctx, "failed delete notification", err)

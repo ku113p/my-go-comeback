@@ -5,6 +5,7 @@ import (
 	"crypto/platform/app"
 	"crypto/platform/db"
 	"crypto/platform/models"
+	"crypto/platform/telegram/services"
 	"errors"
 
 	"github.com/go-telegram/bot"
@@ -13,9 +14,10 @@ import (
 
 type TelegramRequestHelper struct {
 	*app.App
-	b      *bot.Bot
-	chatID int64
-	User   *models.User
+	b                   *bot.Bot
+	chatID              int64
+	User                *models.User
+	NotificationService *services.NotificationService
 }
 
 func newTelegramRequestHelper(b *bot.Bot, chatID int64, a *app.App) (*TelegramRequestHelper, error) {
@@ -32,8 +34,9 @@ func newTelegramRequestHelper(b *bot.Bot, chatID int64, a *app.App) (*TelegramRe
 			return nil, err
 		}
 	}
+	notificationService := services.NewNotificationService(a)
 
-	return &TelegramRequestHelper{a, b, chatID, u}, nil
+	return &TelegramRequestHelper{a, b, chatID, u, notificationService}, nil
 }
 
 func (h *TelegramRequestHelper) SendMessage(ctx context.Context, text string) {

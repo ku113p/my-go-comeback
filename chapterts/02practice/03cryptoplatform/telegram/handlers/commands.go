@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/platform/app"
 	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/services"
 	"crypto/platform/telegram/view"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -50,27 +52,15 @@ func (c *AddCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Upda
 	s := strings.Replace(update.Message.Text, "/add ", "", 1)
 	s = strings.Trim(s, " ")
 
-	n, err := newNotificationFromString(s)
+	n, err := h.NotificationService.CreateNotification(h.User, s)
 	if err != nil {
-		h.SendError(ctx, fmt.Sprintf("%s", err))
-		return
-	}
+		var expectedError *services.ExpectedError
+		if errors.As(err, &expectedError) {
+			h.SendError(ctx, expectedError.Message)
+			return
+		}
 
-	token, err := c.DB.GetPrice(n.Symbol)
-	if err != nil {
-		h.SendUnexpectedError(ctx, "failed get price", err)
-		return
-	}
-
-	if n.Check(token) {
-		h.SendError(ctx, "price already reached target amount")
-		return
-	}
-
-	n.UserID = h.User.ID
-	n, err = c.DB.CreateNotification(n)
-	if err != nil {
-		h.SendUnexpectedError(ctx, "failed create notification", err)
+		h.SendUnexpectedError(ctx, "failed to create notification", err)
 		return
 	}
 
@@ -90,19 +80,13 @@ func (c *ListCommand) Name() string {
 }
 
 func (c *ListCommand) Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper) {
-	ns, err := c.DB.ListNotificationsByUserID(*h.User.ID)
+	ns, err := h.NotificationService.GetNotificationsByUser(h.User)
 	if err != nil {
-		h.SendUnexpectedError(ctx, "failed list notifications", err)
+		h.SendUnexpectedError(ctx, "failed get list notifications", err)
 		return
 	}
-	kb := view.BuildNotificationsKeyboard(ns)
 
-	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:      update.Message.Chat.ID,
-		Text:        fmt.Sprintf("You have %d Notificatins", len(ns)),
-		ReplyMarkup: kb,
-	})
-	if err != nil {
-		c.Logger.Error("failed send message", "error", err)
-	}
+	text := fmt.Sprintf("You have %d Notificatins", len(ns))
+	kb := view.BuildNotificationsKeyboard(ns)
+	h.SendMessageWithMarkup(ctx, text, kb)
 }
