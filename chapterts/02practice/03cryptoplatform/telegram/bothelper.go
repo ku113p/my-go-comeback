@@ -11,12 +11,12 @@ import (
 	telegramModels "github.com/go-telegram/bot/models"
 )
 
-type BotHelper struct {
+type BotRunner struct {
 	*app.App
 	mode mode
 }
 
-func (h *BotHelper) Run() error {
+func (h *BotRunner) Run() error {
 	opts := []bot.Option{
 		bot.WithMiddlewares(h.withTelegramRequestHelper),
 		bot.WithDefaultHandler(h.defaultHandler),
@@ -35,7 +35,7 @@ func (h *BotHelper) Run() error {
 	return h.mode.runBot(opts...)
 }
 
-func (h *BotHelper) commandHandlers() []handlers.Command {
+func (h *BotRunner) commandHandlers() []handlers.Command {
 	return []handlers.Command{
 		handlers.NewHelpCommand(h.App),
 		handlers.NewAddCommand(h.App),
@@ -43,7 +43,7 @@ func (h *BotHelper) commandHandlers() []handlers.Command {
 	}
 }
 
-func (h *BotHelper) callbackQueryDataHandlers() []handlers.CallbackQueryData {
+func (h *BotRunner) callbackQueryDataHandlers() []handlers.CallbackQueryData {
 	return []handlers.CallbackQueryData{
 		handlers.NewNotificationInfoCallbackQueryData(h.App),
 		handlers.NewRequestDeleteNotificationCallbackQueryData(h.App),
@@ -52,20 +52,20 @@ func (h *BotHelper) callbackQueryDataHandlers() []handlers.CallbackQueryData {
 	}
 }
 
-func (h *BotHelper) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
+func (h *BotRunner) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
 		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
 		fn(ctx, b, update, telegramHelper)
 	}
 }
 
-func (h *BotHelper) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+func (h *BotRunner) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
 	if update.Message != nil {
 		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
 		telegramHelper.SendMessage(ctx, fmt.Sprintf("%#v", telegramHelper.User))
 	}
 }
 
-func (h *BotHelper) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerFunc {
+func (h *BotRunner) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerFunc {
 	return middleware.WithTelegramRequestHelper(next, h.App)
 }

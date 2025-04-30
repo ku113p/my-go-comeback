@@ -22,8 +22,8 @@ const (
 	ModeWebhook
 )
 
-func (m mode) NewBotHelper(a *app.App) *BotHelper {
-	return &BotHelper{a, m}
+func (m mode) NewBotRunner(a *app.App) *BotRunner {
+	return &BotRunner{a, m}
 }
 
 func (m mode) runBot(opts ...bot.Option) error {

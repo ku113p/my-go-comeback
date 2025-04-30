@@ -47,7 +47,7 @@ func startCollecting(a *app.App) {
 }
 
 func startTgBot(a *app.App) {
-	b := telegram.ModePooling.NewBotHelper(a)
+	b := telegram.ModePooling.NewBotRunner(a)
 	toRun := func() error { return b.Run() }
 	if err := utils.LogProcess(*a.Logger, "tg bot", toRun); err != nil {
 		a.Logger.Error("failed run Telegram Bot", "error", err)
