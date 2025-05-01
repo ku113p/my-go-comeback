@@ -4,13 +4,11 @@ import (
 	"context"
 	"crypto/platform/app"
 	"crypto/platform/telegram/handlers"
-	"crypto/platform/telegram/middleware"
 	"crypto/platform/telegram/options"
 	"fmt"
 	"os"
 
 	"github.com/go-telegram/bot"
-	telegramModels "github.com/go-telegram/bot/models"
 )
 
 const tokenEnvKey = "TG_API_TOKEN"
@@ -26,7 +24,7 @@ func NewBotRunner(app *app.App) *BotRunner {
 func (h *BotRunner) Run() error {
 	ctx := context.Background()
 
-	opts := h.options()
+	opts := getOptions(h.App)
 
 	token, err := getToken()
 	if err != nil {
@@ -42,13 +40,13 @@ func (h *BotRunner) Run() error {
 	return myBot.run(ctx)
 }
 
-func (h *BotRunner) options() []bot.Option {
-	opts := []bot.Option{
-		bot.WithMiddlewares(h.withTelegramRequestHelper),
-		bot.WithDefaultHandler(h.defaultHandler),
-	}
+func getOptions(app *app.App) []bot.Option {
+	adapter := handlers.GetAdapter(app)
+	opts := []bot.Option{}
 
 	optionsCreators := []options.OptionParamsBuilder{
+		options.GetWithUserParamsCreator(app),
+		options.NewDefaultParams,
 		options.NewHelpCommandParams,
 		options.NewAddCommandParams,
 		options.NewListCommandParams,
@@ -58,28 +56,10 @@ func (h *BotRunner) options() []bot.Option {
 		options.NewRequestDeleteNotificationCallbackQueryParams,
 	}
 	for _, paramCreator := range optionsCreators {
-		opts = append(opts, paramCreator().ToOption(h.wrapHandler))
+		opts = append(opts, paramCreator().ToOption(adapter))
 	}
 
 	return opts
-}
-
-func (h *BotRunner) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
-	return func(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-		fn(ctx, update, telegramHelper)
-	}
-}
-
-func (h *BotRunner) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
-	if update.Message != nil {
-		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
-		telegramHelper.SendMessage(ctx, fmt.Sprintf("%#v", telegramHelper.User))
-	}
-}
-
-func (h *BotRunner) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerFunc {
-	return middleware.WithTelegramRequestHelper(next, h.App)
 }
 
 func getToken() (*string, error) {

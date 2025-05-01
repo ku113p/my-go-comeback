@@ -16,7 +16,7 @@ type NotificationService struct {
 	*app.App
 }
 
-func NewNotificationService(a *app.App) *NotificationService {
+func newNotificationService(a *app.App) *NotificationService {
 	return &NotificationService{a}
 }
 
@@ -32,7 +32,7 @@ func newExpectedError(msg string) error {
 	return &ExpectedError{Message: msg}
 }
 
-func (s *NotificationService) CreateNotification(user *models.User, input string) (*models.Notification, error) {
+func (s *NotificationService) Create(user *models.User, input string) (*models.Notification, error) {
 	n, err := newNotificationFromString(input)
 	if err != nil {
 		return nil, fmt.Errorf("invalid notification format: %w", err)
@@ -82,7 +82,7 @@ func newNotificationFromString(s string) (*models.Notification, error) {
 	return n, nil
 }
 
-func (s *NotificationService) GetNotificationsByUser(user *models.User) ([]*models.Notification, error) {
+func (s *NotificationService) GetByUser(user *models.User) ([]*models.Notification, error) {
 	ns, err := s.DB.ListNotificationsByUserID(*user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get notifications: %w", err)
@@ -91,7 +91,7 @@ func (s *NotificationService) GetNotificationsByUser(user *models.User) ([]*mode
 	return ns, nil
 }
 
-func (s *NotificationService) GetNotificationByID(id string) (*models.Notification, error) {
+func (s *NotificationService) GetByID(id string) (*models.Notification, error) {
 	notificationID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse notification id: %w", err)
@@ -108,7 +108,7 @@ func (s *NotificationService) GetNotificationByID(id string) (*models.Notificati
 	return n, nil
 }
 
-func (s *NotificationService) DeleteNotificationByID(id string) error {
+func (s *NotificationService) DeleteByID(id string) error {
 	notificationID, err := uuid.Parse(id)
 	if err != nil {
 		return fmt.Errorf("failed to parse notification id: %w", err)

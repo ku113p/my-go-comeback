@@ -3,7 +3,7 @@ package options
 import (
 	"context"
 	"crypto/platform/telegram/handlers"
-	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/helpers"
 	"crypto/platform/telegram/services"
 	"crypto/platform/telegram/view"
 	"errors"
@@ -58,7 +58,7 @@ func NewHelpCommandParams() OptionParams {
 		build()
 }
 
-func help(ctx context.Context, _ *models.Update, h *middleware.TelegramRequestHelper) {
+func help(ctx context.Context, _ *models.Update, h *helpers.TelegramRequestHelper) {
 	h.SendMessage(ctx, "This bot help to monitor crypto prices")
 }
 
@@ -69,11 +69,11 @@ func NewAddCommandParams() OptionParams {
 		build()
 }
 
-func add(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
+func add(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
 	s := strings.Replace(update.Message.Text, "/add ", "", 1)
 	s = strings.Trim(s, " ")
 
-	n, err := h.NotificationService.CreateNotification(h.User, s)
+	n, err := h.Services.Notification.Create(h.User, s)
 	if err != nil {
 		var expectedError *services.ExpectedError
 		if errors.As(err, &expectedError) {
@@ -95,8 +95,8 @@ func NewListCommandParams() OptionParams {
 		build()
 }
 
-func list(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
-	ns, err := h.NotificationService.GetNotificationsByUser(h.User)
+func list(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
+	ns, err := h.Services.Notification.GetByUser(h.User)
 	if err != nil {
 		h.SendUnexpectedError(ctx, "failed get list notifications", err)
 		return

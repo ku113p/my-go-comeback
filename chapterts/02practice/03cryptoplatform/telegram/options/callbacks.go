@@ -3,7 +3,7 @@ package options
 import (
 	"context"
 	"crypto/platform/telegram/handlers"
-	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/helpers"
 	"crypto/platform/telegram/services"
 	"crypto/platform/telegram/view"
 	"crypto/platform/utils"
@@ -59,13 +59,13 @@ func NewNotificationInfoCallbackQueryParams() OptionParams {
 		build()
 }
 
-func notificationInfo(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
+func notificationInfo(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
 	h.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "n_", "", 1)
 	s = strings.Trim(s, " ")
 
-	n, err := h.NotificationService.GetNotificationByID(s)
+	n, err := h.Services.Notification.GetByID(s)
 	if err != nil {
 		var expectedError *services.ExpectedError
 		if errors.As(err, &expectedError) {
@@ -88,13 +88,13 @@ func NewRequestDeleteNotificationCallbackQueryParams() OptionParams {
 		build()
 }
 
-func requestDeleteNotification(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
+func requestDeleteNotification(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
 	h.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "rdn_", "", 1)
 	s = strings.Trim(s, " ")
 
-	n, err := h.NotificationService.GetNotificationByID(s)
+	n, err := h.Services.Notification.GetByID(s)
 	if err != nil {
 		var expectedError *services.ExpectedError
 		if errors.As(err, &expectedError) {
@@ -117,13 +117,13 @@ func NewDeleteNotificationCallbackQueryParams() OptionParams {
 		build()
 }
 
-func deleteNotification(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
+func deleteNotification(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
 	h.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	s := strings.Replace(update.CallbackQuery.Data, "dn_", "", 1)
 	s = strings.Trim(s, " ")
 
-	if err := h.NotificationService.DeleteNotificationByID(s); err != nil {
+	if err := h.Services.Notification.DeleteByID(s); err != nil {
 		var expectedError *services.ExpectedError
 		if errors.As(err, &expectedError) {
 			h.SendError(ctx, expectedError.Message)
@@ -143,9 +143,8 @@ func NewDeleteMessageCallbackQueryParams() OptionParams {
 		build()
 }
 
-func deleteMessage(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper) {
+func deleteMessage(ctx context.Context, update *models.Update, h *helpers.TelegramRequestHelper) {
 	h.AnswerCallbackQuery(ctx, update.CallbackQuery.ID)
 
 	h.DeleteMessage(ctx, update.CallbackQuery.Message.Message.ID)
-	h.SendMessage(ctx, "Cancelled")
 }
