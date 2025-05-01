@@ -3,8 +3,11 @@ package telegram
 import (
 	"context"
 	"crypto/platform/app"
+	"crypto/platform/models"
 	"crypto/platform/telegram/handlers"
+	"crypto/platform/telegram/helpers"
 	"crypto/platform/telegram/options"
+	"crypto/platform/utils"
 	"fmt"
 	"os"
 
@@ -69,4 +72,32 @@ func getToken() (*string, error) {
 	}
 
 	return &token, nil
+}
+
+func SendNotification(ctx context.Context, n *models.Notification, app *app.App) error {
+	token, err := getToken()
+	if err != nil {
+		return err
+	}
+
+	bot, err := bot.New(*token)
+	if err != nil {
+		return err
+	}
+
+	user, err := app.DB.GetUserByID(*n.UserID)
+	if err != nil {
+		return err
+	}
+
+	helper := helpers.NewTelegramRequestHelper(bot, user, app)
+	text := fmt.Sprintf(
+		"Signal!\n%v %v $%v",
+		n.Symbol,
+		n.Sign.When(),
+		utils.FloatComma(n.Amount),
+	)
+	helper.SendMessage(ctx, text)
+
+	return nil
 }

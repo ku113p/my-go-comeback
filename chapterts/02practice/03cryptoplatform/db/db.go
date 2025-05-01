@@ -11,6 +11,7 @@ type DB interface {
 	UpdatePrices([]*models.TokenPrice) error
 	GetPrice(string) (*models.TokenPrice, error)
 
+	ListUsers() ([]*models.User, error)
 	GetUserByID(uuid.UUID) (*models.User, error)
 	GetUserByTelegramChatID(int64) (*models.User, error)
 	CreateUser(*models.User) (*models.User, error)

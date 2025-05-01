@@ -3,6 +3,8 @@ package db
 import (
 	"crypto/platform/models"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/google/uuid"
 )
@@ -72,6 +74,13 @@ func (db *InMemoryDB) CreateNotification(n *models.Notification) (*models.Notifi
 func (db *InMemoryDB) newID() *uuid.UUID {
 	id := db.idGenerator()
 	return &id
+}
+
+func (db *InMemoryDB) ListUsers() ([]*models.User, error) {
+	db.locker <- nil
+	defer func() { <-db.locker }()
+
+	return slices.Collect(maps.Values(db.usersStorage)), nil
 }
 
 func (db *InMemoryDB) CreateUser(u *models.User) (*models.User, error) {

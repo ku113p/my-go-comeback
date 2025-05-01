@@ -4,6 +4,7 @@ import (
 	"crypto/platform/app"
 	"crypto/platform/collectors"
 	"crypto/platform/db"
+	"crypto/platform/monitoring"
 	"crypto/platform/telegram"
 	"crypto/platform/utils"
 	"sync"
@@ -31,16 +32,27 @@ func run(a *app.App) {
 	wg.Wait()
 }
 
-func getToRun() [2]func(*app.App) {
-	return [2]func(*app.App){
-		startCollecting,
+func getToRun() [3]func(*app.App) {
+	updated := make(chan any, 1)
+
+	return [3]func(*app.App){
+		func(a *app.App) { startCollecting(a, updated) },
+		func(a *app.App) { startMonitoring(a, updated) },
 		startTgBot,
 	}
 }
 
-func startCollecting(a *app.App) {
-	c := collectors.NewRateCollector(a)
+func startCollecting(a *app.App, updated chan<- any) {
+	c := collectors.NewRateCollector(a, updated)
 	toRun := func() error { return c.Run() }
+	if err := utils.LogProcess(*a.Logger, "collecting", toRun); err != nil {
+		a.Logger.Error("failed collect logs", "error", err)
+	}
+}
+
+func startMonitoring(a *app.App, updated <-chan any) {
+	m := monitoring.NewMonitoring(a, updated)
+	toRun := func() error { return m.Run() }
 	if err := utils.LogProcess(*a.Logger, "collecting", toRun); err != nil {
 		a.Logger.Error("failed collect logs", "error", err)
 	}

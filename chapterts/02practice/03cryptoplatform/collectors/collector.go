@@ -10,11 +10,12 @@ import (
 const updateSeconds = 60
 
 type RateCollector struct {
-	app *app.App
+	app     *app.App
+	updated chan<- any
 }
 
-func NewRateCollector(app *app.App) *RateCollector {
-	p := RateCollector{app}
+func NewRateCollector(app *app.App, updated chan<- any) *RateCollector {
+	p := RateCollector{app, updated}
 
 	return &p
 }
@@ -45,6 +46,7 @@ func (c *RateCollector) getPrices(pause time.Duration) {
 		c.app.DB.UpdatePrices(prices)
 		c.app.Logger.Info("prices updated")
 		c.app.Logger.Info("get prices finished")
+		go c.notifiUpdated()
 	}
 
 	ticker := time.NewTicker(pause)
@@ -54,4 +56,8 @@ func (c *RateCollector) getPrices(pause time.Duration) {
 		getPrices()
 		<-ticker.C
 	}
+}
+
+func (c *RateCollector) notifiUpdated() {
+	c.updated <- nil
 }
