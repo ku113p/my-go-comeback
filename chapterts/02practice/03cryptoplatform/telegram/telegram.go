@@ -3,97 +3,90 @@ package telegram
 import (
 	"context"
 	"crypto/platform/app"
+	"crypto/platform/telegram/handlers"
+	"crypto/platform/telegram/middleware"
+	"crypto/platform/telegram/options"
 	"fmt"
-	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/go-telegram/bot"
+	telegramModels "github.com/go-telegram/bot/models"
 )
 
 const tokenEnvKey = "TG_API_TOKEN"
-const webhookURLEnvKey = "TG_WEBHOOK_URL"
-const webhookPortEnvKey = "TG_WEBHOOK_PORT"
 
-type mode int
-
-const (
-	ModePooling mode = iota
-	ModeWebhook
-)
-
-func (m mode) NewBotRunner(a *app.App) *BotRunner {
-	return &BotRunner{a, m}
+type BotRunner struct {
+	*app.App
 }
 
-func (m mode) runBot(opts ...bot.Option) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func NewBotRunner(app *app.App) *BotRunner {
+	return &BotRunner{app}
+}
 
-	botToken, ok := os.LookupEnv(tokenEnvKey)
-	if !ok {
-		return fmt.Errorf("env `%s` not found", tokenEnvKey)
-	}
+func (h *BotRunner) Run() error {
+	ctx := context.Background()
 
-	b, err := bot.New(botToken, opts...)
+	opts := h.options()
+
+	token, err := getToken()
 	if err != nil {
 		return err
 	}
 
-	switch m {
-	case ModePooling:
-		runPooling(ctx, b)
-	case ModeWebhook:
-		if err := runWebhook(ctx, b); err != nil {
-			return err
-		}
+	myBot := newMyBotBuilder().
+		withMode(modePooling).
+		withOptions(opts).
+		withToken(*token).
+		build()
+
+	return myBot.run(ctx)
+}
+
+func (h *BotRunner) options() []bot.Option {
+	opts := []bot.Option{
+		bot.WithMiddlewares(h.withTelegramRequestHelper),
+		bot.WithDefaultHandler(h.defaultHandler),
 	}
 
-	return nil
-}
-
-func runPooling(ctx context.Context, b *bot.Bot) {
-	b.Start(ctx)
-}
-
-func runWebhook(ctx context.Context, b *bot.Bot) error {
-	c, err := getWebhookConnect()
-	if err != nil {
-		return err
+	optionsCreators := []options.OptionParamsBuilder{
+		options.NewHelpCommandParams,
+		options.NewAddCommandParams,
+		options.NewListCommandParams,
+		options.NewDeleteMessageCallbackQueryParams,
+		options.NewDeleteNotificationCallbackQueryParams,
+		options.NewNotificationInfoCallbackQueryParams,
+		options.NewRequestDeleteNotificationCallbackQueryParams,
+	}
+	for _, paramCreator := range optionsCreators {
+		opts = append(opts, paramCreator().ToOption(h.wrapHandler))
 	}
 
-	b.SetWebhook(ctx, &bot.SetWebhookParams{
-		URL: c.url,
-	})
-
-	go func() {
-		http.ListenAndServe(fmt.Sprintf(":%d", c.port), b.WebhookHandler())
-	}()
-
-	b.StartWebhook(ctx)
-
-	return nil
+	return opts
 }
 
-type webhookConnect struct {
-	url  string
-	port int
+func (h *BotRunner) wrapHandler(fn handlers.HandlerFunc) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+		fn(ctx, update, telegramHelper)
+	}
 }
 
-func getWebhookConnect() (*webhookConnect, error) {
-	url, ok := os.LookupEnv(webhookURLEnvKey)
+func (h *BotRunner) defaultHandler(ctx context.Context, b *bot.Bot, update *telegramModels.Update) {
+	if update.Message != nil {
+		telegramHelper := middleware.ContextTelegramRequestHelper(ctx)
+		telegramHelper.SendMessage(ctx, fmt.Sprintf("%#v", telegramHelper.User))
+	}
+}
+
+func (h *BotRunner) withTelegramRequestHelper(next bot.HandlerFunc) bot.HandlerFunc {
+	return middleware.WithTelegramRequestHelper(next, h.App)
+}
+
+func getToken() (*string, error) {
+	token, ok := os.LookupEnv(tokenEnvKey)
 	if !ok {
-		return nil, fmt.Errorf("env `%s` not found", webhookURLEnvKey)
+		return nil, fmt.Errorf("env `%s` not found", tokenEnvKey)
 	}
 
-	portStr, ok := os.LookupEnv(webhookPortEnvKey)
-	if !ok {
-		return nil, fmt.Errorf("env `%s` not found", webhookPortEnvKey)
-	}
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &webhookConnect{url, port}, nil
+	return &token, nil
 }

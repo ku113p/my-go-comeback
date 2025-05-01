@@ -8,18 +8,10 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-type HandlerFunc func(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper)
+type HandlerAdatper func(HandlerFunc) bot.HandlerFunc
+
+type HandlerFunc func(ctx context.Context, update *models.Update, h *middleware.TelegramRequestHelper)
 
 type Handler interface {
 	Handle(ctx context.Context, b *bot.Bot, update *models.Update, h *middleware.TelegramRequestHelper)
-}
-
-type Command interface {
-	Handler
-	Name() string
-}
-
-type CallbackQueryData interface {
-	Handler
-	Prefix() string
 }
