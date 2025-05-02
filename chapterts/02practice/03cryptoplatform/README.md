@@ -23,12 +23,14 @@ Set the following environment variables:
 
 - `TG_API_TOKEN`: Your Telegram bot token.
 - `CMC_API_KEY`: Your CoinMarketCap API key.
+- `DATABASE_URL`: Your PostgreSQL DB connect URL
 
 Example:
 
 ```bash
 export TG_API_TOKEN="your-telegram-bot-token"
 export CMC_API_KEY="your-coinmarketcap-api-key"
+export DATABASE_URL="postgresql://user:password@localhost:5432/dbname?sslmode=disable"
 ```
 
 ## 🏃‍♂️ Running the Bot
@@ -43,6 +45,18 @@ export CMC_API_KEY="your-coinmarketcap-api-key"
 
    ```bash
    go run .
+   ```
+
+2. Alternate run the bot via docker compose
+   create .env file firstly
+   ```env
+   TG_API_TOKEN="your-telegram-bot-token"
+   CMC_API_KEY="your-coinmarketcap-api-key"
+   DATABASE_URL="postgresql://user:password@pgbouncer:5432/dbname?sslmode=disable"
+   ```
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
    ```
 
 The bot will start in polling mode and interact with users via Telegram.

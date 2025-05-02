@@ -3,8 +3,8 @@ services:
     build: .
     depends_on:
       - pgbouncer
-    environment:
-      DATABASE_URL: postgres://user:password@pgbouncer:6432/dbname?sslmode=disable
+    env_file:
+      - .env
     ports:
       - "8080:8080"
 

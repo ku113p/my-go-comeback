@@ -25,7 +25,7 @@ func main() {
 }
 
 func DBURL() string {
-	url, ok := os.LookupEnv("DB_URL")
+	url, ok := os.LookupEnv("DATABASE_URL")
 	if !ok {
 		return "postgresql://user:password@localhost:5432/dbname?sslmode=disable"
 	}
