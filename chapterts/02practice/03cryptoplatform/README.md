@@ -48,6 +48,7 @@ export DATABASE_URL="postgresql://user:password@localhost:5432/dbname?sslmode=di
    ```
 
 2. Alternate run the bot via docker compose
+
    create .env file firstly
    ```env
    TG_API_TOKEN="your-telegram-bot-token"
@@ -55,6 +56,7 @@ export DATABASE_URL="postgresql://user:password@localhost:5432/dbname?sslmode=di
    DATABASE_URL="postgresql://user:password@pgbouncer:5432/dbname?sslmode=disable"
    ```
 
+   run docker services
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
    ```
