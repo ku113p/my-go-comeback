@@ -16,7 +16,7 @@ import (
 )
 
 func setupTestServer() *httptest.Server {
-	mux := getRootMux()
+	mux := rootMux()
 	return httptest.NewServer(mux)
 }
 

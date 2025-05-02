@@ -36,7 +36,7 @@ func Run() {
 	case fList:
 		logger.Info("task", "tasks", listTasks())
 	case fGet != "":
-		if t, ok := getTask(fGet); ok {
+		if t, ok := task(fGet); ok {
 			logger.Info("got task", "task", t)
 		} else {
 			logger.Warn("task not exists", "id", fGet)

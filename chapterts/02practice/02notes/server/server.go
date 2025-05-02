@@ -11,7 +11,7 @@ type server struct {
 }
 
 func (s *server) Run() {
-	mux := getRootMux()
+	mux := rootMux()
 
 	http.ListenAndServe(s.url(), mux)
 }

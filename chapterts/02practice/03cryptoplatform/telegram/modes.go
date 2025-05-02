@@ -38,7 +38,7 @@ func runPooling(ctx context.Context, b *bot.Bot) {
 }
 
 func runWebhook(ctx context.Context, b *bot.Bot) error {
-	c, err := getWebhookConnect()
+	c, err := newWebhookConnect()
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ type webhookConnect struct {
 	port int
 }
 
-func getWebhookConnect() (*webhookConnect, error) {
+func newWebhookConnect() (*webhookConnect, error) {
 	url, ok := os.LookupEnv(webhookURLEnvKey)
 	if !ok {
 		return nil, fmt.Errorf("env `%s` not found", webhookURLEnvKey)

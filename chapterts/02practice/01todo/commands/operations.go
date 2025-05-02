@@ -10,7 +10,7 @@ func listTasks() []*db.Task {
 	return db.GetStorage().ListTasks()
 }
 
-func getTask(id string) (*db.Task, bool) {
+func task(id string) (*db.Task, bool) {
 	return db.GetStorage().GetTask(id)
 }
 

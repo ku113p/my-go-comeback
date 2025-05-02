@@ -37,13 +37,18 @@ func (c *RateCollector) Run() error {
 func (c *RateCollector) getPrices(pause time.Duration) {
 	getPrices := func() {
 		c.app.Logger.Info("get prices inited")
+
 		prices, err := coinmarketcap.GetPrices()
 		if err != nil {
 			c.app.Logger.Error("get prices", "error", err)
 			return
 		}
 
-		c.app.DB.UpdatePrices(prices)
+		if err := c.app.DB.UpdatePrices(prices); err != nil {
+			c.app.Logger.Error("failed update prices", "error", err)
+			return
+		}
+
 		c.app.Logger.Info("prices updated")
 		c.app.Logger.Info("get prices finished")
 		go c.notifiUpdated()

@@ -14,7 +14,7 @@ import (
 
 var logger = slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-func getRootMux() *http.ServeMux {
+func rootMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	repository := models.NewModelsRepository(models.NewUuidGenerator(), models.ModelsToRegister)

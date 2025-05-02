@@ -27,9 +27,9 @@ func NewBotRunner(app *app.App) *BotRunner {
 func (h *BotRunner) Run() error {
 	ctx := context.Background()
 
-	opts := getOptions(h.App)
+	opts := buildOptions(h.App)
 
-	token, err := getToken()
+	token, err := token()
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (h *BotRunner) Run() error {
 	return myBot.run(ctx)
 }
 
-func getOptions(app *app.App) []bot.Option {
+func buildOptions(app *app.App) []bot.Option {
 	adapter := handlers.GetAdapter(app)
 	opts := []bot.Option{}
 
@@ -65,7 +65,7 @@ func getOptions(app *app.App) []bot.Option {
 	return opts
 }
 
-func getToken() (*string, error) {
+func token() (*string, error) {
 	token, ok := os.LookupEnv(tokenEnvKey)
 	if !ok {
 		return nil, fmt.Errorf("env `%s` not found", tokenEnvKey)
@@ -75,7 +75,7 @@ func getToken() (*string, error) {
 }
 
 func SendNotification(ctx context.Context, n *models.Notification, app *app.App) error {
-	token, err := getToken()
+	token, err := token()
 	if err != nil {
 		return err
 	}

@@ -7,21 +7,35 @@ import (
 	"crypto/platform/monitoring"
 	"crypto/platform/telegram"
 	"crypto/platform/utils"
+	"os"
 	"sync"
 )
 
 func main() {
 	logger := utils.NewLogger()
-	db := db.NewInMemoryDBWithIDGen()
+	db, err := db.NewPostgresDBWithIDGen(DBURL())
+	if err != nil {
+		logger.Error("failed to connect to db", "error", err)
+		return
+	}
+	defer db.Close()
 	a := app.NewApp(logger, db)
 
 	run(a)
 }
 
+func DBURL() string {
+	url, ok := os.LookupEnv("DB_URL")
+	if !ok {
+		return "postgresql://user:password@localhost:5432/dbname?sslmode=disable"
+	}
+	return url
+}
+
 func run(a *app.App) {
 	var wg sync.WaitGroup
 
-	for _, f := range getToRun() {
+	for _, f := range toRun() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -32,7 +46,7 @@ func run(a *app.App) {
 	wg.Wait()
 }
 
-func getToRun() [3]func(*app.App) {
+func toRun() [3]func(*app.App) {
 	updated := make(chan struct{}, 1)
 
 	return [3]func(*app.App){

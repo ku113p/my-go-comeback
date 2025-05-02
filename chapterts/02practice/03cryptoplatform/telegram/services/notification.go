@@ -76,8 +76,7 @@ func newNotificationFromString(s string) (*models.Notification, error) {
 		return nil, fmt.Errorf("invalid amount")
 	}
 
-	msg := fmt.Sprintf("price %v %v %v", symbol, sign.String(), amount)
-	n := models.NewNotification(symbol, *sign, amount, nil, &msg)
+	n := models.NewNotification(symbol, *sign, amount, nil)
 
 	return n, nil
 }

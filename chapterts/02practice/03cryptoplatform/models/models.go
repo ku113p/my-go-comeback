@@ -8,10 +8,10 @@ import (
 )
 
 type TokenPrice struct {
-	Price  float64
-	Name   string
-	Symbol string
-	Time   time.Time
+	Price  float64   `db:"price"`
+	Name   string    `db:"name"`
+	Symbol string    `db:"symbol"`
+	Time   time.Time `db:"time"`
 }
 
 func NewTokenPrice(p float64, n, s string, t time.Time) *TokenPrice {
@@ -19,8 +19,8 @@ func NewTokenPrice(p float64, n, s string, t time.Time) *TokenPrice {
 }
 
 type User struct {
-	ID             *uuid.UUID
-	TelegramChatID *int64
+	ID             *uuid.UUID `db:"id"`
+	TelegramChatID *int64     `db:"telegram_chat_id"`
 }
 
 func NewUser(id int64) *User {
@@ -84,21 +84,19 @@ func (s *CompareSign) When() string {
 }
 
 type Notification struct {
-	ID     *uuid.UUID
-	Symbol string
-	Sign   CompareSign
-	Amount float64
-	Text   *string
-	UserID *uuid.UUID
+	ID     *uuid.UUID  `db:"iq"`
+	Symbol string      `db:"symbol"`
+	Sign   CompareSign `db:"sign"`
+	Amount float64     `db:"amount"`
+	UserID *uuid.UUID  `db:"user_id"`
 }
 
-func NewNotification(symbol string, sign CompareSign, amount float64, userID *uuid.UUID, text *string) *Notification {
+func NewNotification(symbol string, sign CompareSign, amount float64, userID *uuid.UUID) *Notification {
 	return &Notification{
 		Symbol: symbol,
 		Sign:   sign,
 		Amount: amount,
 		UserID: userID,
-		Text:   text,
 	}
 }
 
