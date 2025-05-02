@@ -11,10 +11,10 @@ const updateSeconds = 60
 
 type RateCollector struct {
 	app     *app.App
-	updated chan<- any
+	updated chan<- struct{}
 }
 
-func NewRateCollector(app *app.App, updated chan<- any) *RateCollector {
+func NewRateCollector(app *app.App, updated chan<- struct{}) *RateCollector {
 	p := RateCollector{app, updated}
 
 	return &p
@@ -59,5 +59,5 @@ func (c *RateCollector) getPrices(pause time.Duration) {
 }
 
 func (c *RateCollector) notifiUpdated() {
-	c.updated <- nil
+	c.updated <- struct{}{}
 }

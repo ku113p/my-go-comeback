@@ -12,7 +12,7 @@ var logger = slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 type Storage struct {
 	data   map[string]*Task
-	locker chan any
+	locker chan struct{}
 }
 
 func GetStorage() *Storage {
@@ -31,7 +31,7 @@ func newStorage(data map[string]*Task) *Storage {
 
 	return &Storage{
 		data:   data,
-		locker: make(chan any, 1),
+		locker: make(chan struct{}, 1),
 	}
 }
 
@@ -79,7 +79,7 @@ func (s *Storage) GetTask(id string) (*Task, bool) {
 }
 
 func (s *Storage) borrowSpace() func() {
-	s.locker <- true
+	s.locker <- struct{}{}
 	return func() { <-s.locker }
 }
 

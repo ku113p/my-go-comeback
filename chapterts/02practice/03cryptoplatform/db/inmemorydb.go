@@ -15,7 +15,7 @@ type InMemoryDB struct {
 	notificationsStorage map[uuid.UUID]*models.Notification
 
 	idGenerator func() uuid.UUID
-	locker      chan any
+	locker      chan struct{}
 }
 
 func NewInMemoryDBWithIDGen() *InMemoryDB {
@@ -33,12 +33,12 @@ func newInMemoryDB(idGenerator func() uuid.UUID) *InMemoryDB {
 		notificationsStorage: make(map[uuid.UUID]*models.Notification, 0),
 
 		idGenerator: idGenerator,
-		locker:      make(chan any, 1),
+		locker:      make(chan struct{}, 1),
 	}
 }
 
 func (db *InMemoryDB) UpdatePrices(newPirces []*models.TokenPrice) error {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	newStorage := make(map[string]*models.TokenPrice, len(newPirces))
@@ -50,7 +50,7 @@ func (db *InMemoryDB) UpdatePrices(newPirces []*models.TokenPrice) error {
 }
 
 func (db *InMemoryDB) GetPrice(symbol string) (*models.TokenPrice, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	tp, ok := db.tokensStorage[symbol]
@@ -62,7 +62,7 @@ func (db *InMemoryDB) GetPrice(symbol string) (*models.TokenPrice, error) {
 }
 
 func (db *InMemoryDB) CreateNotification(n *models.Notification) (*models.Notification, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	n.ID = db.newID()
@@ -77,14 +77,14 @@ func (db *InMemoryDB) newID() *uuid.UUID {
 }
 
 func (db *InMemoryDB) ListUsers() ([]*models.User, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	return slices.Collect(maps.Values(db.usersStorage)), nil
 }
 
 func (db *InMemoryDB) CreateUser(u *models.User) (*models.User, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	u.ID = db.newID()
@@ -94,7 +94,7 @@ func (db *InMemoryDB) CreateUser(u *models.User) (*models.User, error) {
 }
 
 func (db *InMemoryDB) GetUserByID(id uuid.UUID) (*models.User, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	u, ok := db.usersStorage[id]
@@ -106,7 +106,7 @@ func (db *InMemoryDB) GetUserByID(id uuid.UUID) (*models.User, error) {
 }
 
 func (db *InMemoryDB) GetUserByTelegramChatID(id int64) (*models.User, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	for _, u := range db.usersStorage {
@@ -126,7 +126,7 @@ func (db *InMemoryDB) ListNotificationsBySymbol(symbol string) ([]*models.Notifi
 }
 
 func (db *InMemoryDB) collectNotifications(suite func(*models.Notification) bool) ([]*models.Notification, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	notifications := make([]*models.Notification, 0)
@@ -148,7 +148,7 @@ func (db *InMemoryDB) ListNotificationsByUserID(userID uuid.UUID) ([]*models.Not
 }
 
 func (db *InMemoryDB) GetNotificationByID(id uuid.UUID) (*models.Notification, error) {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	n, ok := db.notificationsStorage[id]
@@ -160,7 +160,7 @@ func (db *InMemoryDB) GetNotificationByID(id uuid.UUID) (*models.Notification, e
 }
 
 func (db *InMemoryDB) RemoveNotification(id uuid.UUID) error {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	_, ok := db.notificationsStorage[id]
@@ -173,7 +173,7 @@ func (db *InMemoryDB) RemoveNotification(id uuid.UUID) error {
 }
 
 func (db *InMemoryDB) RemoveUser(id uuid.UUID) error {
-	db.locker <- nil
+	db.locker <- struct{}{}
 	defer func() { <-db.locker }()
 
 	_, ok := db.usersStorage[id]

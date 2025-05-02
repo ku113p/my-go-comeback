@@ -33,7 +33,7 @@ func run(a *app.App) {
 }
 
 func getToRun() [3]func(*app.App) {
-	updated := make(chan any, 1)
+	updated := make(chan struct{}, 1)
 
 	return [3]func(*app.App){
 		func(a *app.App) { startCollecting(a, updated) },
@@ -42,7 +42,7 @@ func getToRun() [3]func(*app.App) {
 	}
 }
 
-func startCollecting(a *app.App, updated chan<- any) {
+func startCollecting(a *app.App, updated chan<- struct{}) {
 	c := collectors.NewRateCollector(a, updated)
 	toRun := func() error { return c.Run() }
 	if err := utils.LogProcess(*a.Logger, "collecting", toRun); err != nil {
@@ -50,7 +50,7 @@ func startCollecting(a *app.App, updated chan<- any) {
 	}
 }
 
-func startMonitoring(a *app.App, updated <-chan any) {
+func startMonitoring(a *app.App, updated <-chan struct{}) {
 	m := monitoring.NewMonitoring(a, updated)
 	toRun := func() error { return m.Run() }
 	if err := utils.LogProcess(*a.Logger, "collecting", toRun); err != nil {
