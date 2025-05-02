@@ -72,10 +72,10 @@
     - [ ] (Optional) Explore `sqlx` or GORM.
     - [ ] Write integration tests (require a running DB).
 - **Project 4: Concurrent Processing (Medium+)**
-    - [ ] Choose a task (e.g., web crawler, task processor).
-    - [ ] Design concurrent logic (goroutines, channels).
-    - [ ] Implement using `sync.WaitGroup`, channels, `select`.
-    - [ ] Ensure safe access to shared data (`Mutex`).
+    - [x] Choose a task (e.g., web crawler, task processor).
+    - [x] Design concurrent logic (goroutines, channels).
+    - [x] Implement using `sync.WaitGroup`, channels, `select`.
+    - [x] Ensure safe access to shared data (`Mutex`).
     - [ ] Write tests, possibly checking for race conditions (`go test -race`).
 
 **--- CHECKPOINT: 2-3 Working Projects Created ---**
