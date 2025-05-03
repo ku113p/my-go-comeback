@@ -2,6 +2,7 @@ package db
 
 import (
 	"crypto/platform/models"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -42,17 +43,29 @@ func newPostgresDB(idGenerator func() uuid.UUID, dbURI string) (*PostgresDB, err
 }
 
 func (p *PostgresDB) UpdatePrices(prices []*models.TokenPrice) error {
-	_, err := p.db.NamedExec(`INSERT INTO prices (price, name, symbol, time) VALUES (:price, :name, :symbol, :time)`, prices)
+	_, err := p.db.NamedExec(`
+	INSERT INTO token_price (price, name, symbol, time)
+	VALUES (:price, :name, :symbol, :time)
+	ON CONFLICT (symbol) DO UPDATE
+	SET price = EXCLUDED.price,
+		name = EXCLUDED.name,
+		time = EXCLUDED.time;`, prices)
 	return err
 }
 
 func (p *PostgresDB) GetPrice(symbol string) (*models.TokenPrice, error) {
-	var price *models.TokenPrice
-	err := p.db.Get(price, `SELECT * FROM prices WHERE symbol = $1`, symbol)
+	prices := []*models.TokenPrice{}
+	err := p.db.Select(&prices, `SELECT * FROM token_price WHERE symbol = $1`, symbol)
 	if err != nil {
 		return nil, err
 	}
-	return price, nil
+	switch len(prices) {
+	case 0:
+		return nil, ErrNotExists
+	case 1:
+		return prices[0], nil
+	}
+	return nil, fmt.Errorf("too much prices")
 }
 
 func (p *PostgresDB) ListUsers() ([]*models.User, error) {
@@ -65,27 +78,39 @@ func (p *PostgresDB) ListUsers() ([]*models.User, error) {
 }
 
 func (p *PostgresDB) GetUserByID(id uuid.UUID) (*models.User, error) {
-	var user *models.User
-	err := p.db.Get(user, `SELECT * FROM users WHERE id = $1`, id)
+	users := []*models.User{}
+	err := p.db.Select(&users, `SELECT * FROM users WHERE id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	switch len(users) {
+	case 0:
+		return nil, ErrNotExists
+	case 1:
+		return users[0], nil
+	}
+	return nil, fmt.Errorf("too much users")
 }
 
 func (p *PostgresDB) GetUserByTelegramChatID(telegramChatID int64) (*models.User, error) {
-	var user *models.User
-	err := p.db.Get(user, `SELECT * FROM users WHERE telegram_chat_id = $1`, telegramChatID)
+	users := []*models.User{}
+	err := p.db.Select(&users, `SELECT * FROM users WHERE telegram_chat_id = $1`, telegramChatID)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	switch len(users) {
+	case 0:
+		return nil, ErrNotExists
+	case 1:
+		return users[0], nil
+	}
+	return nil, fmt.Errorf("too much users")
 }
 
 func (p *PostgresDB) CreateUser(user *models.User) (*models.User, error) {
 	user.ID = p.newID()
 
-	_, err := p.db.NamedExec(`INSERT INTO users (telegram_chat_id) VALUES (:telegram_chat_id)`, user)
+	_, err := p.db.NamedExec(`INSERT INTO users (id, telegram_chat_id) VALUES (:id, :telegram_chat_id)`, user)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +128,7 @@ func (p *PostgresDB) RemoveUser(id uuid.UUID) error {
 
 func (p *PostgresDB) ListNotificationsBySymbol(symbol string) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	err := p.db.Select(&notifications, `SELECT * FROM notifications WHERE symbol = $1`, symbol)
+	err := p.db.Select(&notifications, `SELECT * FROM notification WHERE symbol = $1`, symbol)
 	if err != nil {
 		return nil, err
 	}
@@ -111,17 +136,23 @@ func (p *PostgresDB) ListNotificationsBySymbol(symbol string) ([]*models.Notific
 }
 
 func (p *PostgresDB) GetNotificationByID(id uuid.UUID) (*models.Notification, error) {
-	var notification *models.Notification
-	err := p.db.Get(notification, `SELECT * FROM notifications WHERE id = $1`, id)
+	notifications := []*models.Notification{}
+	err := p.db.Select(&notifications, `SELECT * FROM notification WHERE id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
-	return notification, nil
+	switch len(notifications) {
+	case 0:
+		return nil, ErrNotExists
+	case 1:
+		return notifications[0], nil
+	}
+	return nil, fmt.Errorf("too much notifications")
 }
 
 func (p *PostgresDB) ListNotificationsByUserID(id uuid.UUID) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	err := p.db.Select(&notifications, `SELECT * FROM notifications WHERE user_id = $1`, id)
+	err := p.db.Select(&notifications, `SELECT * FROM notification WHERE user_id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +162,7 @@ func (p *PostgresDB) ListNotificationsByUserID(id uuid.UUID) ([]*models.Notifica
 func (p *PostgresDB) CreateNotification(n *models.Notification) (*models.Notification, error) {
 	n.ID = p.newID()
 
-	_, err := p.db.NamedExec(`INSERT INTO notifications (user_id, symbol, sign, amount) VALUES (:user_id, :symbol, :sign, :amount)`, n)
+	_, err := p.db.NamedExec(`INSERT INTO notification (id, user_id, symbol, sign, amount) VALUES (:id, :user_id, :symbol, :sign, :amount)`, n)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +171,7 @@ func (p *PostgresDB) CreateNotification(n *models.Notification) (*models.Notific
 }
 
 func (p *PostgresDB) RemoveNotification(id uuid.UUID) error {
-	_, err := p.db.Exec(`DELETE FROM notifications WHERE id = $1`, id)
+	_, err := p.db.Exec(`DELETE FROM notification WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}

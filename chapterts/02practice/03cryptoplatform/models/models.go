@@ -84,7 +84,7 @@ func (s *CompareSign) When() string {
 }
 
 type Notification struct {
-	ID     *uuid.UUID  `db:"iq"`
+	ID     *uuid.UUID  `db:"id"`
 	Symbol string      `db:"symbol"`
 	Sign   CompareSign `db:"sign"`
 	Amount float64     `db:"amount"`
