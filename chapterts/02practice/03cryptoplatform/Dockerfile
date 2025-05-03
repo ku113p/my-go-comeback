@@ -18,6 +18,7 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /build/server /app/server
+COPY ./migrations /app/migrations
 
 EXPOSE 8080
 
