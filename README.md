@@ -65,11 +65,11 @@
     - [x] Basic project structure (e.g., handlers, models).
     - [x] Write tests for handlers (using `net/http/httptest`).
 - **Project 3: API with Database (Medium+)**
-    - [ ] Choose a DB (e.g., PostgreSQL, SQLite).
-    - [ ] Set up DB connection (`database/sql`).
-    - [ ] Replace in-memory storage with DB operations (CRUD).
-    - [ ] Handle DB errors.
-    - [ ] (Optional) Explore `sqlx` or GORM.
+    - [x] Choose a DB (e.g., PostgreSQL, SQLite).
+    - [x] Set up DB connection (`database/sql`).
+    - [x] Replace in-memory storage with DB operations (CRUD).
+    - [x] Handle DB errors.
+    - [x] (Optional) Explore `sqlx` or GORM.
     - [ ] Write integration tests (require a running DB).
 - **Project 4: Concurrent Processing (Medium+)**
     - [x] Choose a task (e.g., web crawler, task processor).
