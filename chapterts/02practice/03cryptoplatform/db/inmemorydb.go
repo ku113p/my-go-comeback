@@ -37,6 +37,10 @@ func newInMemoryDB(idGenerator func() uuid.UUID) *InMemoryDB {
 	}
 }
 
+func (db *InMemoryDB) Migrate() error {
+	return nil
+}
+
 func (db *InMemoryDB) UpdatePrices(newPirces []*models.TokenPrice) error {
 	db.locker <- struct{}{}
 	defer func() { <-db.locker }()

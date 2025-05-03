@@ -13,12 +13,17 @@ import (
 
 func main() {
 	logger := utils.NewLogger()
+
 	db, err := db.NewPostgresDBWithIDGen(DBURL())
 	if err != nil {
 		logger.Error("failed to connect to db", "error", err)
 		return
 	}
 	defer db.Close()
+	if err := db.Migrate(); err != nil {
+		logger.Error("failed do migrations", "error", err)
+	}
+
 	a := app.NewApp(logger, db)
 
 	run(a)

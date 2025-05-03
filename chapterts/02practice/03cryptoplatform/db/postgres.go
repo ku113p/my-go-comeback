@@ -42,6 +42,10 @@ func newPostgresDB(idGenerator func() uuid.UUID, dbURI string) (*PostgresDB, err
 	return &PostgresDB{idGenerator, db}, nil
 }
 
+func (db *PostgresDB) Migrate() error {
+	return migratePostgreSQL(db.db.DB)
+}
+
 func (p *PostgresDB) UpdatePrices(prices []*models.TokenPrice) error {
 	_, err := p.db.NamedExec(`
 	INSERT INTO token_price (price, name, symbol, time)

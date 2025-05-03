@@ -8,6 +8,8 @@ import (
 )
 
 type DB interface {
+	Migrate() error
+
 	UpdatePrices([]*models.TokenPrice) error
 	GetPrice(string) (*models.TokenPrice, error)
 
