@@ -6,6 +6,8 @@ services:
       - pgbouncer
     env_file:
       - .env
+    ports:
+      - "1005:8080"
 
   db:
     image: postgres:17.4

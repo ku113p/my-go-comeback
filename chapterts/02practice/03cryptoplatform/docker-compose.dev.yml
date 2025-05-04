@@ -1,8 +1,4 @@
 services:
-  db:
-    ports:
-      - "5433:5432"
-
   pgbouncer:
     ports:
       - "5432:5432"

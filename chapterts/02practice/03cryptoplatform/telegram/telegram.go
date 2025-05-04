@@ -34,8 +34,16 @@ func (h *BotRunner) Run() error {
 		return err
 	}
 
+	var mode mode
+	if useWebhook() {
+		mode = modeWebhook
+	} else {
+		mode = modePooling
+	}
+	h.Logger.Info(fmt.Sprintf("Telegram bot will be runned in mode %v", mode))
+
 	myBot := newMyBotBuilder().
-		withMode(modePooling).
+		withMode(mode).
 		withOptions(opts).
 		withToken(*token).
 		build()
