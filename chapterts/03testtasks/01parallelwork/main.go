@@ -28,39 +28,44 @@ func init() {
 	maxWorkers = *workersFlag
 }
 
-type toDo struct {
-	s  string
-	wg *sync.WaitGroup
+type Task struct {
+	payload string
+	wg      *sync.WaitGroup
 }
 
-func newToDo(s string, wg *sync.WaitGroup) *toDo {
-	return &toDo{s, wg}
+func newTask(payload string, wg *sync.WaitGroup) *Task {
+	return &Task{payload, wg}
 }
 
 func main() {
-	distributorTasks := tasksProducer(filePath)
+	inputLines := readLinesFromFile(filePath)
 
-	tasks := make(chan *toDo)
-	wProducer := workerProducer(maxWorkers, tasks)
+	taskQueue := make(chan *Task)
+	workerInitDone := startWorkerPool(maxWorkers, taskQueue)
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
-	for t := range distributorTasks {
-		wg.Add(1)
-		td := newToDo(t, &wg)
 
+	for line := range inputLines {
+		wg.Add(1)
+		task := newTask(line, &wg)
+
+		// Либо задача сразу уходит в канал для воркеров,
+		// либо мы ждем инициализации воркеров по возможности и задача всё равно уходит в канал
 		select {
-		case tasks <- td:
-		case <-wProducer:
-			tasks <- td
+		case taskQueue <- task:
+		case <-workerInitDone:
+			taskQueue <- task
 		}
 	}
 }
 
-func tasksProducer(filePath string) chan string {
-	preTasks := make(chan string)
+// readLinesFromFile читает строки из файла и отправляет их в канал
+func readLinesFromFile(filePath string) <-chan string {
+	lines := make(chan string)
+
 	go func() {
-		defer close(preTasks)
+		defer close(lines)
 
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -68,42 +73,49 @@ func tasksProducer(filePath string) chan string {
 			os.Exit(1)
 		}
 		defer file.Close()
+
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			preTasks <- scanner.Text()
+			lines <- scanner.Text()
 		}
 	}()
 
-	return preTasks
+	return lines
 }
 
-func workerProducer(maxWorkers int, tasks chan *toDo) <-chan any {
-	waiter := make(chan any)
+// startWorkerPool запускает пул из maxWorkers горутин-воркеров
+// и возвращает канал, для получения сигналов, когда создавать
+func startWorkerPool(maxWorkers int, taskQueue <-chan *Task) <-chan struct{} {
+	needCreate := make(chan struct{})
 
 	go func() {
 		for range maxWorkers {
-			waiter <- struct{}{}
-			go startNewWorker(tasks)
+			needCreate <- struct{}{} // заполняем канал; в следующий раз создадим воркера только когда он освободится
+			go worker(taskQueue)
 		}
-
-		close(waiter)
+		close(needCreate) // достигли максимума воркеров
 	}()
 
-	return waiter
+	return needCreate
 }
 
-func startNewWorker(tasks chan *toDo) {
-	for t := range tasks {
-		doWork(t)
+// worker выполняет задачи, поступающие из taskQueue
+func worker(taskQueue <-chan *Task) {
+	for task := range taskQueue {
+		process(task)
 	}
 }
 
-func doWork(t *toDo) {
-	if toSleep, err := strconv.Atoi(t.s); err != nil {
+// process обрабатывает одну задачу: если число — ждем и выводим
+func process(task *Task) {
+	defer task.wg.Done()
+
+	ms, err := strconv.Atoi(task.payload)
+	if err != nil {
 		fmt.Printf("Строка содержит не число: %v\n", err)
-	} else {
-		time.Sleep(time.Millisecond * time.Duration(toSleep))
-		fmt.Println(t.s)
+		return
 	}
-	t.wg.Done()
+
+	time.Sleep(time.Millisecond * time.Duration(ms))
+	fmt.Println(task.payload)
 }
