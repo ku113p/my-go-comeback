@@ -128,10 +128,10 @@ func worker(ctx context.Context, taskQueue <-chan *Task) {
 func process(_ context.Context, task *Task) {
 	defer task.wg.Done()
 
-	ms, err := strconv.Atoi(task.payload)
+	ms, err := strconv.ParseUint(task.payload, 10, 16)
 	if err != nil {
-		fmt.Printf("Line is not a number: %v\n", err)
-		return
+		fmt.Printf("Error parse payload: %v\n", err)
+		os.Exit(1)
 	}
 
 	time.Sleep(time.Millisecond * time.Duration(ms))
