@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,18 +14,19 @@ var filePath string
 var maxWorkers int
 
 func init() {
-	fileFlag := flag.String("file", "", "Path to the input file")
-	workersFlag := flag.Int("workers", 1, "Maximum number of workers")
-
-	flag.Parse()
-
-	if *fileFlag == "" {
-		fmt.Println("Specify the path to the file using -file")
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: <program> <workers> <file path>")
 		os.Exit(1)
 	}
 
-	filePath = *fileFlag
-	maxWorkers = *workersFlag
+	var err error
+	maxWorkers, err = strconv.Atoi(os.Args[1])
+	if err != nil {
+		fmt.Println("First argument must be a number (number of workers)")
+		os.Exit(1)
+	}
+
+	filePath = os.Args[2]
 }
 
 type Task struct {
