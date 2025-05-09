@@ -98,11 +98,14 @@ func startWorkerPool(ctx context.Context, maxWorkers int, inputLines <-chan stri
 		task := newTask(line, &wg)
 
 		select {
-		case taskQueue <- task:
-		case <-produceWorker:
-			taskQueue <- task
 		case <-ctx.Done():
 			return
+		default:
+			select {
+			case taskQueue <- task:
+			case <-produceWorker:
+				taskQueue <- task
+			}
 		}
 	}
 
@@ -125,7 +128,7 @@ func worker(ctx context.Context, taskQueue <-chan *Task) {
 }
 
 // process handles a single task: if the payload is a number, wait and print it
-func process(_ context.Context, task *Task) {
+func process(ctx context.Context, task *Task) {
 	defer task.wg.Done()
 
 	ms, err := strconv.ParseUint(task.payload, 10, 16)
@@ -134,6 +137,11 @@ func process(_ context.Context, task *Task) {
 		os.Exit(1)
 	}
 
-	time.Sleep(time.Millisecond * time.Duration(ms))
-	fmt.Println(task.payload)
+	timer := time.NewTimer(time.Duration(ms) * time.Millisecond)
+	select {
+	case <-timer.C:
+		fmt.Println(task.payload)
+	case <-ctx.Done():
+		return
+	}
 }
