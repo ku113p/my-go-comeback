@@ -41,6 +41,7 @@ func main() {
 	inputLines := readLinesFromFile(filePath)
 
 	taskQueue := make(chan *Task)
+	defer close(taskQueue) // Чтобы горутины закончивших воркеров не ждали еще активных
 	workerInitDone := startWorkerPool(maxWorkers, taskQueue)
 
 	var wg sync.WaitGroup
