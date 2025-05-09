@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -14,13 +15,13 @@ var filePath string
 var maxWorkers int
 
 func init() {
-	fileFlag := flag.String("file", "", "Путь к файлу")
-	workersFlag := flag.Int("workers", 1, "Максимальное количество воркеров")
+	fileFlag := flag.String("file", "", "Path to the input file")
+	workersFlag := flag.Int("workers", 1, "Maximum number of workers")
 
 	flag.Parse()
 
 	if *fileFlag == "" {
-		fmt.Println("Укажите путь к файлу с помощью -file")
+		fmt.Println("Specify the path to the file using -file")
 		os.Exit(1)
 	}
 
@@ -38,30 +39,21 @@ func newTask(payload string, wg *sync.WaitGroup) *Task {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	inputLines := readLinesFromFile(filePath)
 
-	taskQueue := make(chan *Task)
-	defer close(taskQueue) // Чтобы горутины закончивших воркеров не ждали еще активных
-	workerInitDone := startWorkerPool(maxWorkers, taskQueue)
+	done := make(chan any)
+	go func() {
+		startWorkerPool(ctx, maxWorkers, inputLines)
+		done <- struct{}{}
+	}()
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	for line := range inputLines {
-		wg.Add(1)
-		task := newTask(line, &wg)
-
-		// Либо задача сразу уходит в канал для воркеров,
-		// либо мы ждем инициализации воркеров по возможности и задача всё равно уходит в канал
-		select {
-		case taskQueue <- task:
-		case <-workerInitDone:
-			taskQueue <- task
-		}
-	}
+	<-done
 }
 
-// readLinesFromFile читает строки из файла и отправляет их в канал
+// readLinesFromFile reads lines from a file and sends them to a channel
 func readLinesFromFile(filePath string) <-chan string {
 	lines := make(chan string)
 
@@ -70,7 +62,7 @@ func readLinesFromFile(filePath string) <-chan string {
 
 		file, err := os.Open(filePath)
 		if err != nil {
-			fmt.Printf("Ошибка при открытии файла: %v\n", err)
+			fmt.Printf("Error opening file: %v\n", err)
 			os.Exit(1)
 		}
 		defer file.Close()
@@ -84,36 +76,61 @@ func readLinesFromFile(filePath string) <-chan string {
 	return lines
 }
 
-// startWorkerPool запускает пул из maxWorkers горутин-воркеров
-// и возвращает канал, для получения сигналов, когда создавать
-func startWorkerPool(maxWorkers int, taskQueue <-chan *Task) <-chan struct{} {
-	needCreate := make(chan struct{})
+// startWorkerPool starts a pool of maxWorkers goroutines (workers)
+func startWorkerPool(ctx context.Context, maxWorkers int, inputLines <-chan string) {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	taskQueue := make(chan *Task)
+	produceWorker := make(chan any)
 
 	go func() {
+		// Fill the channel to signal available worker slots
 		for range maxWorkers {
-			needCreate <- struct{}{} // заполняем канал; в следующий раз создадим воркера только когда он освободится
-			go worker(taskQueue)
+			produceWorker <- struct{}{}
+			go worker(ctx, taskQueue)
 		}
-		close(needCreate) // достигли максимума воркеров
+		close(produceWorker) // reached the maximum number of workers
 	}()
 
-	return needCreate
+	for line := range inputLines {
+		wg.Add(1)
+		task := newTask(line, &wg)
+
+		select {
+		case taskQueue <- task:
+		case <-produceWorker:
+			taskQueue <- task
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	close(taskQueue)
 }
 
-// worker выполняет задачи, поступающие из taskQueue
-func worker(taskQueue <-chan *Task) {
-	for task := range taskQueue {
-		process(task)
+// worker processes tasks coming from taskQueue
+func worker(ctx context.Context, taskQueue <-chan *Task) {
+	for {
+		select {
+		case task, ok := <-taskQueue:
+			if !ok {
+				return
+			}
+			process(ctx, task)
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
-// process обрабатывает одну задачу: если число — ждем и выводим
-func process(task *Task) {
+// process handles a single task: if the payload is a number, wait and print it
+func process(_ context.Context, task *Task) {
 	defer task.wg.Done()
 
 	ms, err := strconv.Atoi(task.payload)
 	if err != nil {
-		fmt.Printf("Строка содержит не число: %v\n", err)
+		fmt.Printf("Line is not a number: %v\n", err)
 		return
 	}
 
