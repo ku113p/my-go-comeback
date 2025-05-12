@@ -3,6 +3,9 @@ package collectors
 import (
 	"crypto/platform/app"
 	"crypto/platform/coinmarketcap"
+	"fmt"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -24,11 +27,16 @@ func (c *RateCollector) Run() error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
+	interval, err := updateInteraval()
+	if err != nil {
+		return err
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		c.getPrices(updateSeconds * time.Second)
+		c.getPrices(*interval)
 	}()
 
 	return nil
@@ -65,4 +73,20 @@ func (c *RateCollector) getPrices(pause time.Duration) {
 
 func (c *RateCollector) notifiUpdated() {
 	c.updated <- struct{}{}
+}
+
+func updateInteraval() (*time.Duration, error) {
+	intervalStr, ok := os.LookupEnv("UPDATE_INTERVAL_MS")
+	if !ok {
+		return nil, fmt.Errorf("environment variable UPDATE_INTERVAL_MS not set")
+	}
+
+	intervalMs, err := strconv.Atoi(intervalStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UPDATE_INTERVAL_MS value: %v", err)
+	}
+
+	interval := time.Duration(intervalMs) * time.Millisecond
+
+	return &interval, nil
 }
