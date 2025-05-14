@@ -32,6 +32,7 @@ func (mode mode) startTelegramBot(ctx context.Context, telegramBot *bot.Bot) err
 }
 
 func runPooling(ctx context.Context, b *bot.Bot) {
+	b.DeleteWebhook(ctx, nil)
 	b.Start(ctx)
 }
 
