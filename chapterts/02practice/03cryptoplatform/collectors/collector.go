@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const updateSeconds = 60
-
 type RateCollector struct {
 	app     *app.App
 	updated chan<- struct{}
